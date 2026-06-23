@@ -1,0 +1,14 @@
+
+SCOPE: 0
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+__main__   empty      funcion      1      6     
+
+SCOPE: 1
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+x          int        variable     2      5     
+iyn1       int        variable     3      5     
+micadena   string     variable     4      8     

@@ -1,0 +1,4 @@
+java -jar lib/jflex-full-1.9.1.jar src/scanner/Lexer.flex
+java -jar lib/java-cup-11b.jar -parser parser -symbols sym -expect 6 -destdir src/parser src/parser/Parser.cup
+javac -d out -cp "lib/java-cup-11b-runtime.jar" src/main/*.java src/parser/*.java src/scanner/*.java src/tabla/*.java
+java -cp "lib/java-cup-11b-runtime.jar;out" main.Main src/tests/prueba.txt

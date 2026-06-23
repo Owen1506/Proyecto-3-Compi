@@ -1,0 +1,13 @@
+__main__:
+prepareStack 8
+data_int_x
+t1 = 5
+x = t1
+data_int_iyn1
+t2 = 10
+t3 = t2 + x
+iyn1 = t3
+data_string_micadena
+micadena = Hola
+clearStack 8
+__main___end:

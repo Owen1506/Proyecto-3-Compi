@@ -1,0 +1,2122 @@
+package parser;
+
+// Objetivo: Realizar el analisis semantico y generacion de codigo intermedio (3D)
+// contra la gramatica definida en el proyecto.
+// Entrada : tokens generados uno a uno por el analizador lexico.
+// Salida  : confirmacion de sintaxis valida o lista de errores con su ubicacion, analisis semantico y generacion de codigo intermedio (3D).
+// Restriccion: el parser no se detiene en el primer error.
+// usa producciones 'error' para recuperarse y continuar el analisis.
+
+import scanner.*;
+import java_cup.runtime.*;
+import java.util.*;
+import tabla.TablaManagement;
+import tabla.Simbolo;
+import tabla.Tabla;
+parser code {:
+    /**
+     * Acumula todos los errores sintácticos encontrados durante el análisis.
+     * Es estática para permitir su consulta sin instanciar el parser.
+     */
+    private static final List<String> SYNTAX_ERRORS = new ArrayList<>();
+
+    // ── Estructuras para validaciones semánticas ──────────────────────────────
+
+    /** Pila de contextos de bucle/switch para validar sentencias break. */
+    private static final Stack<String> flagParaBreaks = new Stack<>();
+
+    /** Pila de funciones activas para validar retornos y tipos. */
+    private static final Stack<Simbolo> pilaFunciones = new Stack<>();
+
+    /** Pila de conjuntos de casos por cada switch, para detectar casos duplicados. */
+    private static final Stack<HashSet<String>> pilaCasosSwitch = new Stack<>();
+
+    private static Stack<String> exprAcc = new Stack<>();
+    private static Stack<String>  exprTipo = new Stack<>();
+    // ── Etiquetas para generación de código intermedio ────────────────────────
+
+    /** Etiquetas de inicio de bucles do-while anidados (para backpatching). */
+    private static Stack<String> etiquetasDoWhile = new Stack<>();
+
+    /** Etiquetas de fin de bloque para sentencias break. */
+    private static final Stack<String> etiquetasFinBreak = new Stack<>();
+
+    /** Etiquetas de fin para bloques if simples anidados. */
+    private static Stack<String> pilaIfFin = new Stack<>();
+
+    /**
+     * Etiquetas para bloques if-else anidados.
+     * Cada elemento es un arreglo [etiquetaElse, etiquetaFin].
+     */
+    private static Stack<String[]> pilaIfElse = new Stack<>();
+
+    // ── Estructuras para generación de código de switch ───────────────────────
+
+    /** Expresión evaluada del switch activo (para comparar contra cada caso). */
+    private static final Stack<String> pilaSwitchExpr = new Stack<>();
+    /** Almacena los pares [literal, etiqueta] de cada case, en orden */
+    private static final Stack<String[]> pilaCaseChecks = new Stack<>();
+    /** Etiquetas de salto asociadas a cada caso del switch activo. */
+    private static final Stack<String> pilaEtiquetasCasos = new Stack<>();
+    /** Almacena los cuerpos de los case en orden */
+    private static List<List<String>> cuerpoDeCase = new ArrayList<>();
+    /** Cuerpo del default (si existe) */
+    private static List<String> defaultBody = null;
+    /** Etiqueta del bloque default de cada switch anidado. */
+    private static final Stack<String> pilaDefaultLabel = new Stack<>();
+    private static Stack<String> pilaIfFalse = new Stack<>();
+    private static Stack<String> pilaIfEnd   = new Stack<>();
+    // ── Generación de código intermedio y estado global ───────────────────────
+
+    /** Generador de instrucciones de código de tres direcciones. */
+    public static cod3D generador = new cod3D();
+
+    /** Tamaño del frame de activación de la función actual (en unidades lógicas). */
+    public static int frameSize = 0;
+
+    /** Número de filas de la última matriz procesada. */
+    public int globalFilas = 0;
+
+    /** Número de columnas de la última matriz procesada. */
+    public int globalColumnas = 0;
+
+    /** Valor literal o temporal de la última expresión evaluada. */
+    public String globalVal = "";
+
+    /** Identificador de la última variable/función reconocida. */
+    public String globalID = "";
+
+    /**
+     * Tabla de símbolos construida progresivamente durante el análisis.
+     * Registra declaraciones, funciones y parámetros.
+     */
+    private TablaManagement tabla = new TablaManagement();
+
+    /**
+     * Expone la tabla de símbolos al finalizar el análisis.
+     *
+     * Entrada: ninguna.
+     * Salida: instancia de TablaManagement con todos los símbolos registrados.
+     */
+    public TablaManagement getTabla() {
+        return tabla;
+    }
+
+    /**
+     * Vacía la lista de errores sintácticos.
+     * Debe llamarse antes de iniciar un nuevo análisis para evitar acumulación entre ejecuciones.
+     *
+     * Entrada: ninguna. Salida: ninguna.
+     */
+    public static void resetSyntaxErrors() {
+        SYNTAX_ERRORS.clear();
+    }
+
+    /**
+     * Retorna una copia defensiva de la lista de errores sintácticos.
+     *
+     * Entrada: ninguna.
+     * Salida: List<String> con los errores registrados (no modificable externamente).
+     */
+    public static List<String> getSyntaxErrors() {
+        return new ArrayList<>(SYNTAX_ERRORS);
+    }
+
+    /**
+     * Contenedor de errores semánticos detectados durante el análisis.
+     * Acumula mensajes en un StringBuilder para su consulta posterior.
+     */
+    public static class SemanticErrors {
+        private static StringBuilder cadena = new StringBuilder();
+
+        /**
+         * Agrega un mensaje de error semántico al acumulador.
+         *
+         * Entrada: message — descripción del error semántico.
+         * Salida: ninguna.
+         */
+        public static void appendSemanticError(String message) {
+            cadena.append(message).append("\n");
+        }
+
+        /**
+         * Vacía todos los errores semánticos acumulados.
+         *
+         * Entrada: ninguna. Salida: ninguna.
+         */
+        public static void clear() {
+            cadena.setLength(0);
+        }
+
+        /**
+         * Retorna todos los errores semánticos como un único String.
+         *
+         * Entrada: ninguna.
+         * Salida: String con los errores separados por saltos de línea.
+         */
+        public static String getSemanticErrors() {
+            return cadena.toString();
+        }
+
+        @Override
+        public String toString() {
+            return getSemanticErrors();
+        }
+    }
+
+    /** Instancia global del contenedor de errores semánticos. */
+    public static SemanticErrors SEMANTIC_ERRORS = new SemanticErrors();
+
+    /**
+     * Extrae el lexema de un token con formato "lexema:tipo".
+     *
+     * Entrada: s — String con formato "lexema:tipo" o solo lexema.
+     * Salida: la parte antes de ':', o s completo si no contiene ':'.
+     * Restricción: retorna s sin modificar si es null o no contiene ':'.
+     */
+
+
+    /**
+     * Extrae el tipo de un token con formato "lexema:tipo".
+     *
+     * Entrada: s — String con formato "lexema:tipo", o valores especiales "error"/"vacio".
+     * Salida: la parte después de ':', o s completo si no tiene ':'.
+     * Restricción: retorna null si s es null; retorna s sin modificar para "error" y "vacio".
+     */
+
+
+    static String lexemaDe(String s) {
+        if (s == null) return "";
+        if (s.equals("vacio") || s.equals("error")) return s;
+
+        int pos = s.lastIndexOf(':');
+        if (pos == -1) return s;
+
+        return s.substring(0, pos);
+    }
+
+    static String tipoDe(String s) {
+        if (s == null) return "error";
+        if (s.equals("vacio") || s.equals("error")) return s;
+
+        int pos = s.lastIndexOf(':');
+        if (pos == -1) return s;
+
+        return s.substring(pos + 1);
+    }
+
+    /**
+     * Cuenta el número de filas de una matriz representada como String.
+     *
+     * Entrada: valor — String con formato "[[a,b],[c,d]]:tipo".
+     * Salida: int con la cantidad de filas (número de '[' en el contenido interno).
+     * Restricción: asume formato válido; no valida estructura de la cadena.
+     */
+    public int obtenerCantFilas(String valor) {
+        String matriz = valor.split(":")[0];
+        matriz = matriz.substring(1, matriz.length() - 1);
+        int filas = 0;
+        for (int i = 0; i < matriz.length(); i++) {
+            if (matriz.charAt(i) == '[') filas++;
+        }
+        return filas;
+    }
+
+    /**
+     * Cuenta el número de columnas de una matriz representada como String.
+     *
+     * Entrada: valor — String con formato "[[a,b],[c,d]]:tipo".
+     * Salida: int con la cantidad de columnas por fila.
+     *         Retorna -1 si las filas tienen distinto número de columnas (matriz irregular).
+     * Restricción: asume formato válido; no valida estructura de la cadena.
+     */
+    public int obtenerCantColumnas(String valor) {
+        String matriz = valor.split(":")[0];
+        matriz = matriz.substring(1, matriz.length() - 1);
+        String[] filas = matriz.split("\\],\\[");
+        int columnas = -1;
+        for (String fila : filas) {
+            fila = fila.replace("[", "").replace("]", "");
+            int cantColumnas = fila.trim().isEmpty() ? 0 : fila.split(",").length;
+            if (columnas == -1) {
+                columnas = cantColumnas;
+            } else if (columnas != cantColumnas) {
+                return -1;
+            }
+        }
+        return columnas;
+    }
+
+    /**
+     * Punto de entrada alternativo para probar el parser desde consola.
+     * Lee el código fuente desde la entrada estándar y reporta si la sintaxis es correcta.
+     *
+     * Entrada: args — no utilizado.
+     * Salida: imprime resultado del análisis en consola.
+     * Restricción: solo para pruebas manuales; no usar en producción.
+     */
+    public static void main(String[] args) throws Exception {
+        Lexer lexer = new Lexer(new java.io.InputStreamReader(System.in));
+        parser p = new parser(lexer);
+        try {
+            Object result = p.parse();
+            System.out.println("Sintaxis correcta");
+        } catch (Exception e) {
+            System.out.println("Error sintactico: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Registra un error sintáctico con número de línea cuando está disponible.
+     * Primero intenta obtener la línea desde el símbolo que causó el error;
+     * si no está disponible, la consulta directamente al lexer.
+     *
+     * Entrada:
+     *   message — descripción del error.
+     *   info    — símbolo que provocó el error (puede ser null).
+     * Salida: agrega el error a SYNTAX_ERRORS y lo imprime en stderr.
+     * Restricción: si no se puede determinar la línea, el mensaje omite el número.
+     */
+    @Override
+    public void report_error(String message, Object info) {
+        String formatted;
+        int line = -1;
+
+        if (info instanceof Symbol) {
+            Symbol symbol = (Symbol) info;
+            if (symbol.left > 0) line = symbol.left;
+        }
+
+        if (line == -1) {
+            try {
+                java_cup.runtime.Scanner currentScanner = getScanner();
+                if (currentScanner instanceof scanner.Lexer) {
+                    line = ((scanner.Lexer) currentScanner).getCurrentLine();
+                }
+            } catch (Exception ex) { }
+        }
+
+        formatted = (line > 0)
+            ? "Error sintactico en linea " + line + ": " + message
+            : "Error sintactico: " + message;
+
+        SYNTAX_ERRORS.add(formatted);
+        System.err.println(formatted);
+    }
+
+    /**
+     * Invocado automáticamente por el parser al encontrar un token inesperado.
+     * Construye un mensaje legible con el valor del token y lo delega a report_error.
+     *
+     * Entrada: cur_token — símbolo que no correspondía en el contexto actual.
+     * Salida: ninguna (el error queda registrado vía report_error).
+     */
+    @Override
+    public void syntax_error(Symbol cur_token) {
+        report_error("token inesperado '" + cur_token.value + "'", cur_token);
+    }
+
+:};
+
+// ===== TERMINALES =====
+// Son los tokens que el lexer puede producir y que el parser reconoce como hojas de la gramatica.
+
+terminal LEX_ERROR;
+
+// Tipos de datos del lenguaje.
+terminal INT, FLOAT, CHAR, STRING, BOOL, EMPTY, EXPINT_KW, FRAC_KW;
+
+// Palabras reservadas de control de flujo y estructura.
+terminal MAIN, IF, ELSE, BREAK, RETURN, CASE, DEFAULT, SWITCH, WHILE, DO;
+
+// Delimitadores de agrupacion y estructura.
+terminal PAR_I, PAR_D, LLAVE_I, LLAVE_D;
+
+// Operadores de flujo para arreglos y separadores.
+terminal ARR_I, ARR_D, COMMA;
+
+// Puntuacion y operadores de asignacion.
+terminal PYC, ASSIGN, SEP, DOSPUNTOS;
+
+// Operadores aritmeticos.
+terminal PLUS, MINUS, MULT, DIV, MOD, POW;
+
+// Operadores de incremento y decremento.
+terminal INC, DEC;
+
+// Operadores logicos.
+terminal AND, OR, NOT;
+
+// Operadores de comparacion.
+terminal EQUAL, N_EQUAL, LESS_T, LESS_TE, GREATER_T, GREATER_TE;
+
+// Literales booleanos.
+terminal TRUE, FALSE;
+
+// Terminales con valor asociado.
+terminal String ID, INT_LIT,FLOAT_LIT, FRAC_LIT, EXPINT_LIT, STRING_LIT, CHAR_LIT;
+
+// Instrucciones de entrada y salida.
+terminal CIN, COUT;
+
+// ===== NO TERMINALES =====
+// Representan las construcciones del lenguaje que se forman combinando terminales y otros no terminales.
+
+non terminal  String tipo_retorno;        // tipo que retorna una funcion
+non terminal  String tipo;                // tipo de dato en general
+non terminal  String programa, funciones, funcion;
+non terminal  String main_proc, bloque, cuerpo_funcion, sentencias, sentencia, sentencias_opt;
+
+non terminal  String condicional, bucle, multi_choice;
+non terminal  String lista_casos, caso, default_opt;
+non terminal  String entrada, salida, lista_salida ;
+non terminal  String declaracion;
+non terminal  String declaracion_num, declaracion_scalar,declaracion_num_resto_float, declaracion_num_resto_int, declaracion_scalar_resto;
+non terminal  String asignacion, asignacion_array;
+non terminal  String expresion;
+non terminal  String expr_logica, expr_conjuncion, expr_negacion;
+non terminal  String resto_disyuncion, resto_conjuncion;
+non terminal  String comparacion;
+non terminal  String expr_igual, expr_n_igual, expr_menor, expr_menor_igual, expr_mayor, expr_mayor_igual;
+non terminal  String expr_aritmetica, resto_expresion;
+non terminal  String termino, resto_termino;
+non terminal  String potencia, resto_potencia;
+non terminal  String factor;
+non terminal  String unario, atomo_bool;
+non terminal  String llamada_funcion, argumentos;
+non terminal  String parametros, parametro;
+non terminal  String numero, literal_caso;
+non terminal  String  acceso_array;
+non terminal  String filas_init, fila_init, lista_valores;
+non terminal  String if_rest;
+
+// ===== PRECEDENCIA Y ASOCIATIVIDAD =====
+// Define como resolver ambiguedades cuando dos operadores compiten por el mismo operando.
+// Los que aparecen mas abajo tienen mayor precedencia.
+precedence left OR;
+precedence left AND;
+precedence left EQUAL, N_EQUAL;
+precedence left LESS_T, LESS_TE, GREATER_T, GREATER_TE;
+precedence left PLUS, MINUS;
+precedence left MULT, DIV, MOD;
+precedence right POW;
+precedence right NOT, INC, DEC;
+precedence right ELSE;
+// ===== PUNTO DE INICIO =====
+start with programa;
+
+// ===== PRODUCCIONES =====
+
+// Un programa puede tener funciones definidas antes del main, o solo el main.
+programa ::= funciones main_proc 
+           | main_proc 
+           ;
+
+// Una o mas funciones definidas por el usuario antes del bloque principal.
+funciones ::= funciones funcion
+            | funcion
+            ;
+
+// Definicion de una funcion: tipo de retorno, nombre, parametros y cuerpo.
+// Al reconocerla se registra en la tabla de simbolos y se abre un nuevo scope.
+funcion ::= tipo_retorno:_tipo_retorno SEP ID:_id
+            {:
+                if (tabla.existe(_id)){
+                    SEMANTIC_ERRORS.appendSemanticError("Error semantico: Esta funcion ya existe" + " | Linea:" + _idleft + " Columna: " + _idright);
+                }else{
+                    tabla.insertar(new tabla.Simbolo(_id, _tipo_retorno, "funcion", _idleft, _idright, tabla.getScopeActual()));
+                    tabla.pushFuncionActual(new tabla.Simbolo(_id, _tipo_retorno, "funcion", _idleft, _idright, tabla.getScopeActual()));
+                    tabla.entrarScope();
+                    // func-tipo-nombre-param
+                    generador.appendCod3D(_id + ":");
+                    generador.appendCod3D("prepareStack " + frameSize);
+                }
+    
+            :}
+            PAR_I parametros:_parametros PAR_D
+            {:
+                Simbolo s = tabla.buscarSimbolo(_id);
+                if (s != null) {
+                    String[] str = _parametros.split(",");
+                    for (int i = 0; i < str.length ;i ++){
+                        generador.appendCod3D(str[i]);
+                    }
+                    s.setParametros(_parametros);
+                }
+            :}
+            cuerpo_funcion
+            {:
+                Simbolo s = tabla.buscarSimbolo(_id);
+
+                // Verificar que la función (si no es empty) tenga al menos un return
+                if (s != null && !s.getTipo().equals("empty")) {
+                    Tabla scopeFuncion = tabla.pilaScopes.peek(); 
+                    if (!scopeFuncion.tieneReturn()) {
+                        SEMANTIC_ERRORS.appendSemanticError("Error semantico: la funcion '" + _id + "' no tiene ninguna sentencia 'return'");
+                    }
+                }
+                tabla.popFuncionActual(); 
+                tabla.salirScope();
+                generador.reemplazarLinea("prepareStack 0", "prepareStack " + frameSize);
+                generador.appendCod3D("clearStack " + frameSize);
+                generador.appendCod3D(_id + "_end:");
+                frameSize = 0; // resetear el frame size para la siguiente función
+                RESULT = "";
+            :}
+          ;
+
+// Tipos de retorno validos para una funcion.
+tipo_retorno ::= INT    {: RESULT = "int";    :}
+               | FLOAT  {: RESULT = "float";  :}
+               | CHAR   {: RESULT = "char";   :}
+               | STRING {: RESULT = "string"; :}
+               | BOOL   {: RESULT = "bool";   :}
+               ;
+
+// Lista de parametros de una funcion: puede estar vacia o tener varios separados por coma.
+parametros ::= parametros:_parametro1 COMMA parametro:_parametro2
+            {:
+                RESULT = _parametro1 + "," + _parametro2;
+            :}
+            | parametro:_parametro
+            {:
+                RESULT = _parametro;
+            :}
+            | /* vacio */
+            {:
+                RESULT = "";   // sin parámetros
+            :}
+             ;
+
+// Un parametro individual: tipo, separador y nombre. Se registra en la tabla de simbolos.
+parametro ::= tipo:_tipo SEP ID:_id
+            {:
+                tabla.insertar(new tabla.Simbolo(_id, _tipo, "parametro", _idleft, _idright, tabla.getScopeActual()));
+                RESULT = "param_" + _tipo + "_" + _id;
+            :}
+            ;
+
+// Bloque principal del programa. Se registra en la tabla y se gestiona su scope.
+main_proc ::= EMPTY SEP MAIN:_main PAR_I PAR_D 
+            {:
+                tabla.insertar(new tabla.Simbolo("__main__", "empty", "funcion", _mainleft, _mainright, tabla.getScopeActual()));
+                tabla.entrarScope();
+                tabla.pushFuncionActual(new tabla.Simbolo("__main__", "empty", "funcion", _mainleft, _mainright, tabla.getScopeActual()));
+                generador.appendCod3D(_main + ":");
+                generador.appendCod3D("prepareStack " + frameSize);
+            :}
+              cuerpo_funcion
+            {: 
+            tabla.salirScope(); 
+            tabla.popFuncionActual();
+            generador.reemplazarLinea("prepareStack 0", "prepareStack " + frameSize);
+            generador.appendCod3D("clearStack " + frameSize);
+            generador.appendCod3D(_main + "_end:");
+            :}
+            ;
+
+// Cuerpo de una funcion: sentencias entre llaves.
+// La primera alternativa con 'error' permite recuperarse si el contenido esta malformado.
+cuerpo_funcion ::= LLAVE_I sentencias_opt  LLAVE_D
+               //  | LLAVE_I error LLAVE_D
+                 ;
+
+// Bloque de sentencias anidado (como el cuerpo de un if o un while).
+// Abre y cierra un scope propio para las variables declaradas dentro.
+bloque ::=  LLAVE_I
+         {: tabla.entrarScope(); :} 
+         sentencias_opt  LLAVE_D 
+         {: tabla.salirScope(); :}
+        // | LLAVE_I error LLAVE_D 
+         ;
+
+// Cero o mas sentencias consecutivas.
+sentencias ::= sentencias sentencia | sentencia ;   // al menos una sentencia
+
+
+sentencias_opt ::= sentencias | /* vacio */ ;
+
+
+// Una sentencia puede ser cualquiera de las construcciones validas del lenguaje.
+// Las ultimas tres alternativas sirven para recuperarse de errores sin detener el analisis.
+sentencia ::= declaracion
+            | asignacion
+            | asignacion_array
+            | condicional
+            | bucle
+            | multi_choice
+            | BREAK:_break PYC
+              {:
+                  if (flagParaBreaks.isEmpty()) {
+                      SemanticErrors.appendSemanticError("Error semantico: break solo permitido dentro de bucle o case/default de switch" + " | Linea:" + _breakleft + " Columna: " + _breakright);
+                  }else{
+                    if (!etiquetasFinBreak.isEmpty()) {
+                        String finLabel = etiquetasFinBreak.peek();
+                        generador.appendCod3D("goto " + finLabel);
+                    }
+                  }
+              :}  
+            | RETURN:_return SEP expresion:e1 PYC 
+            {:
+                Tabla actual = tabla.pilaScopes.peek();
+                Simbolo funcionActual = tabla.buscarSimboloFuncion();
+            
+                //Verificar que estamos dentro de una funcion
+                if (funcionActual == null) {
+                    SemanticErrors.appendSemanticError("Error semantico: return fuera de funcion" + " | Linea:" + _returnleft + " Columna: " + _returnright );
+                }
+                //Verificar que la funcion no sea empty
+                else if (funcionActual.getTipo().equals("empty")) {
+                    SemanticErrors.appendSemanticError("Error semantico: funcion tipo 'empty' no puede tener return" + " | Linea:" + _returnleft + " Columna: " + _returnright );
+                }
+                //Verificar que no haya multiples returns
+                else if (actual.tieneReturn()) {
+                    SemanticErrors.appendSemanticError("Error semantico: ya existe un return en este scope" + " | Linea:" + _returnleft + " Columna: " + _returnright );
+                }
+                //Verificar que el tipo coincida
+                else if (!funcionActual.getTipo().equals(tipoDe(e1))) {
+                    SemanticErrors.appendSemanticError("Error semantico: tipo del return (" + e1 + ") diferente al de la funcion (" + funcionActual.getTipo() + ") | Linea:" + e1left + " Columna: " + e1right);
+                }
+                //marcar que hay return
+                else {
+                    actual.setTieneReturn(true);
+                String retVal = lexemaDe(e1);
+                generador.appendCod3D("clearStack " + frameSize);
+                generador.appendCod3D("return = " + retVal);
+                generador.appendCod3D("goto " + funcionActual.getNombre() + "_end");
+                }
+            :}
+            | entrada PYC
+            | salida PYC
+            | expresion:e1 PYC
+            | LEX_ERROR:e {: report_error("Token lexico invalido: '" + e + "'", new Symbol(sym.LEX_ERROR, eleft, eright, e)); :}
+            | error PYC
+            | error LLAVE_D
+            ;
+
+// Una declaracion puede ser numerica (int, float) o escalar (char, string, bool, etc).
+// tamaño bytes int=4, float=4, char=1, bool=1, string=4,
+declaracion ::= declaracion_num
+              | declaracion_scalar
+              ;
+
+// Declaracion de variables enteras o flotantes. Se registran en la tabla de simbolos.
+declaracion_num ::= INT SEP ID:id
+                {:
+                    generador.appendCod3D("data_int_" + id );
+                    frameSize += 4;
+                    globalID = id;
+                :}
+                declaracion_num_resto_int:dec_num_int
+                {:
+                    if (tabla.existeEnScope(id, tabla.getScopeActual())) {
+                        SemanticErrors.appendSemanticError("Error semantico: Este identificador ya esta declarado" + " | Linea:" + idleft + " Columna: " + idright );
+                    } else {
+                        if ("int_arr".equals(dec_num_int)) {
+                            generador.reemplazarLinea("data_int_" + id, "data_int_array_" + id);
+                            tabla.insertar(new tabla.Simbolo(id,"int","arreglo",idleft,idright,tabla.getScopeActual()));
+                        } else {
+                            tabla.insertar(new tabla.Simbolo(id,"int","variable",idleft,idright,tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_num_int)) {
+                                generador.appendCod3D(id + " = " + lexemaDe(dec_num_int));
+                            }else{
+                                generador.appendCod3D(id + " = 0");
+                            }
+                        }
+                    }
+                    String lexema = lexemaDe(dec_num_int);
+                    String tipo   = tipoDe(dec_num_int);
+                    if (!"int".equals(tipo) && !"int_arr".equals(tipo) && !"PYC".equals(tipo)) {
+                        SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo int" + " | Linea:" + dec_num_intleft + " Columna: " + dec_num_intright );
+                    }else{
+                        
+                    }
+                :}
+                | FLOAT SEP ID:id 
+                {:
+                    generador.appendCod3D("data_float_" + id );
+                    frameSize += 4;
+                    globalID = id;
+                :}
+                declaracion_num_resto_float:dec_num_float
+                {:
+                    if (tabla.existeEnScope(id, tabla.getScopeActual())) {
+                        SemanticErrors.appendSemanticError("Error semantico: Este identificador ya esta declarado" + " | Linea:" + idleft + " Columna: " + idright );
+                    } else {
+                        if ("float_arr".equals(dec_num_float)) {
+                            generador.reemplazarLinea("data_float_" + id, "data_float_array_" + id);
+                            tabla.insertar(new tabla.Simbolo(id,"float","arreglo",idleft,idright,tabla.getScopeActual()));
+                        } else {
+                            tabla.insertar(new tabla.Simbolo(id,"float","variable",idleft,idright,tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_num_float)) {
+                                generador.appendCod3D(id + " = " + lexemaDe(dec_num_float));
+                            } else {
+                                generador.appendCod3D(id + " = 0.0");
+                            }
+                        }
+                    }
+                    String tipo = tipoDe(dec_num_float);
+                    if (!"float".equals(tipo) && !"float_arr".equals(tipo) && !"PYC".equals(tipo)) {
+                        
+                        SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo float" + " | Linea:" + dec_num_floatleft + " Columna: " + dec_num_floatright );
+                    }
+                :}
+                  ;
+
+// Parte final de una declaracion numerica: puede terminar sola, con asignacion,
+// como arreglo bidimensional, o como arreglo con valores iniciales.
+declaracion_num_resto_int ::= PYC {: RESULT = "PYC"; :}
+                        | ASSIGN expresion:e1 PYC
+                        {: RESULT = e1; :}
+                        | ARR_I INT_LIT:int_1 ARR_D ARR_I INT_LIT:int_2 ARR_D PYC 
+                        {: //Aca no puedo pasar que el result es de tipo int porque el identificador que se definio antes en dec_num puede ser tipo float o in
+                            int filas = Integer.parseInt(int_1);
+                            int columnas = Integer.parseInt(int_2);
+                            int elemSize = 4; // int
+                            int totalSize = filas * columnas * elemSize;
+                            generador.appendCod3D(globalID + ": .space " + totalSize);
+                            // Actualizar símbolo
+                            Simbolo s = tabla.buscarSimbolo(globalID);
+                            if (s != null) {
+                                s.setFilas(filas);
+                                s.setColumnas(columnas);
+                                s.setElemSize(elemSize);
+                                s.setCategoria("arreglo");
+                            }
+                            RESULT = "int_arr";
+                        :}
+                        | ARR_I INT_LIT:int_1 ARR_D ARR_I INT_LIT:int_2 ARR_D ASSIGN LLAVE_I filas_init:_filas_init LLAVE_D PYC
+                        {: 
+                            int filas = obtenerCantFilas(_filas_init);
+                            int columnas = obtenerCantColumnas(_filas_init);
+                            if (filas != Integer.parseInt(int_1)){
+                                SemanticErrors.appendSemanticError("Error semantico: Cantidad de filas declaradas no coinciden con las asignadas" + " | Linea: " + _filas_initleft + " Columna: " + _filas_initright);
+                            }
+                            if (columnas == -1){
+                                SemanticErrors.appendSemanticError("Error semantico: La cantidad de columnas no son consistentes entre las filas" + " | Linea: " + _filas_initleft + " Columna: " + _filas_initright);
+                            }else if(columnas != Integer.parseInt(int_2)){
+                                SemanticErrors.appendSemanticError("Error semantico: Cantidad de columnas declaradas no coinciden con las asignadas" + " | Linea: " + _filas_initleft + " Columna: " + _filas_initright);
+                            }
+                            if (!tipoDe(_filas_init).equals("int")){
+                                SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo int (Produccion declacion_num_resto_int) |" + " Linea:" + _filas_initleft + " Columna: " + _filas_initright);
+                            }
+
+                            int elemSize = 4;
+                            int totalSize = filas * columnas * elemSize;
+                            generador.appendCod3D(globalID + ": .space " + totalSize);
+                            Simbolo s = tabla.buscarSimbolo(globalID);
+                            if (s != null) {
+                                s.setFilas(filas);
+                                s.setColumnas(columnas);
+                                s.setElemSize(elemSize);
+                                s.setCategoria("arreglo");
+                            }
+                            // Procesar inicialización
+                            String contenido = lexemaDe(_filas_init); 
+                            contenido = contenido.substring(1, contenido.length() - 1); // quitar corchetes externos
+                            String[] filasStr = contenido.split("\\],\\[");
+                            for (int i = 0; i < filasStr.length; i++) {
+                                String fila = filasStr[i].replace("[", "").replace("]", "");
+                                String[] valores = fila.split(",");
+                                for (int j = 0; j < valores.length; j++) {
+                                    String val = valores[j];
+                                    generador.appendCod3D("arr_store " + globalID + ", " + i + ", " + j + ", " + val);
+                                }
+                            }
+                            RESULT = "int_arr";
+                        :}
+                        ;
+declaracion_num_resto_float ::= PYC {: RESULT = "PYC"; :}
+                        | ASSIGN expresion:e1 PYC
+                        {: RESULT = e1; :}
+                        | ARR_I INT_LIT:int_1 ARR_D ARR_I INT_LIT:int_2 ARR_D PYC 
+                        {: //Aca no puedo pasar que el result es de tipo float porque el identificador que se definio antes en dec_num puede ser tipo float o int
+                            int filas = Integer.parseInt(int_1);
+                            int columnas = Integer.parseInt(int_2);
+                            int elemSize = 4; // float
+                            int totalSize = filas * columnas * elemSize;
+                            generador.appendCod3D(globalID + ": .space " + totalSize);
+                            // Actualizar símbolo
+                            Simbolo s = tabla.buscarSimbolo(globalID);
+                            if (s != null) {
+                                s.setFilas(filas);
+                                s.setColumnas(columnas);
+                                s.setElemSize(elemSize);
+                                s.setCategoria("arreglo");
+                            }
+                            RESULT = "float_arr";
+                        :}
+                        | ARR_I INT_LIT:int_1 ARR_D ARR_I INT_LIT:int_2 ARR_D ASSIGN LLAVE_I filas_init:_filas_init LLAVE_D PYC
+                        {: 
+                            int filas = obtenerCantFilas(_filas_init);
+                            int columnas = obtenerCantColumnas(_filas_init);
+                            if (filas != Integer.parseInt(int_1)){
+                                SemanticErrors.appendSemanticError("Error semantico: Cantidad de filas declaradas no coinciden con las asignadas" + " | Linea: " + _filas_initleft + " Columna: " + _filas_initright);
+                            }
+                            if (columnas == -1){
+                                SemanticErrors.appendSemanticError("Error semantico: La cantidad de columnas no son consistentes entre las filas" + " | Linea: " + _filas_initleft + " Columna: " + _filas_initright);
+                            }else if(columnas != Integer.parseInt(int_2)){
+                                SemanticErrors.appendSemanticError("Error semantico: Cantidad de columnas declaradas no coinciden con las asignadas" + " | Linea: " + _filas_initleft + " Columna: " + _filas_initright);
+                            }
+                            if (!tipoDe(_filas_init).equals("float")){
+                                SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo float (Produccion declacion_num_resto_float) |" + " Linea:" + _filas_initleft + " Columna: " + _filas_initright);
+                            }
+
+                            int elemSize = 4;
+                            int totalSize = filas * columnas * elemSize;
+                            generador.appendCod3D(globalID + ": .space " + totalSize);
+                            Simbolo s = tabla.buscarSimbolo(globalID);
+                            if (s != null) {
+                                s.setFilas(filas);
+                                s.setColumnas(columnas);
+                                s.setElemSize(elemSize);
+                                s.setCategoria("arreglo");
+                            }
+                            String contenido = lexemaDe(_filas_init); 
+                            contenido = contenido.substring(1, contenido.length() - 1); // quitar corchetes externos
+                            String[] filasStr = contenido.split("\\],\\[");
+                            for (int i = 0; i < filasStr.length; i++) {
+                                String fila = filasStr[i].replace("[", "").replace("]", "");
+                                String[] valores = fila.split(",");
+                                for (int j = 0; j < valores.length; j++) {
+                                    String val = valores[j];
+                                    generador.appendCod3D("arr_store " + globalID + ", " + i + ", " + j + ", " + val);
+                                }
+                            }
+                            RESULT = "float_arr";
+                        :}
+                        ;
+
+// Declaracion de variables de tipo char, string, bool, expint o frac.
+// Cada una se registra en la tabla de simbolos con su tipo correspondiente.
+declaracion_scalar ::= CHAR SEP ID:id 
+                    {:
+                        generador.appendCod3D("data_char_" + id );
+                        frameSize += 1;
+                    :}
+                    declaracion_scalar_resto:dec_scalar
+                    {:
+                        if (tabla.existe(id)){
+                            SemanticErrors.appendSemanticError("Error semantico: Este identificador ya esta declarado (CHAR) | Linea:" + idleft + " Columna: " + idright);
+                        } else {
+                            tabla.insertar(new Simbolo(id, "char", "variable", idleft, idright, tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_scalar)) {
+                            generador.appendCod3D(id + " = " + lexemaDe(dec_scalar));
+                            } else {
+                                generador.appendCod3D(id + " = \'0\'");
+                            }
+                        }
+                        String tipoDec = tipoDe(dec_scalar);
+                        if (!"char".equals(tipoDec) && !"PYC".equals(tipoDec)) {
+                            
+                            SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo char" + " | Linea:" + idleft + " Columna: " + idright);
+                        }
+                        RESULT = "";   
+                    :}
+                    | STRING SEP ID:id 
+                    {:
+                        generador.appendCod3D("data_string_" + id );
+                        
+                    :}
+                    declaracion_scalar_resto:dec_scalar
+                    {:
+                        if (tabla.existe(id)){
+                            SemanticErrors.appendSemanticError("Error semantico: ident. ya declarado (STRING) | Linea:" + idleft + " Columna: " + idright);
+                        } else {
+                            tabla.insertar(new Simbolo(id, "string", "variable", idleft, idright, tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_scalar)) {
+                                generador.appendCod3D(id + " = " + lexemaDe(dec_scalar));
+                            } else {
+                                generador.appendCod3D(id + " = \"\" ");
+                            }
+                        }
+                        String tipoDec = tipoDe(dec_scalar);
+                        if (!"string".equals(tipoDec) && !"PYC".equals(tipoDec)) {
+                           
+                            SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo string" + " | Linea:" + idleft + " Columna: " + idright);
+                        }
+                        RESULT = "";
+                    :}
+                    | BOOL SEP ID:id 
+                    {:
+                        generador.appendCod3D("data_bool_" + id );
+                        frameSize += 1;
+                    :}
+                    declaracion_scalar_resto:dec_scalar
+                    {:
+                        String tipoDec = tipoDe(dec_scalar);
+                        if (tabla.existe(id)){
+                            SemanticErrors.appendSemanticError("Error semantico: Este identificador ya esta declarado (Produccion declaracion_escalar_BOOL) |" + " Linea:" + idleft + " Columna: " + idright);
+                        }else{
+                            tabla.insertar(new tabla.Simbolo(id, "bool", "variable", idleft, idright, tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_scalar)) {
+                                generador.appendCod3D(id + " = " + lexemaDe(dec_scalar));
+                            } else {
+                                generador.appendCod3D(id + " = 0");
+                            }
+                        }
+                        if (!"bool".equals(tipoDec) && !"PYC".equals(tipoDec)){
+                            SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo bool |" + " Linea:" + idleft + " Columna: " + idright);
+                        }
+                    :}
+                    | EXPINT_KW SEP ID:id declaracion_scalar_resto:dec_scalar
+                    {:
+                        if (tabla.existe(id)){
+                            SemanticErrors.appendSemanticError("Error semantico: Este identificador ya esta declarado (Produccion declaracion_escalar_EXPINT) |" + " Linea:" + idleft + " Columna: " + idright);
+                        }else{
+                            tabla.insertar(new tabla.Simbolo(id, "expint", "variable", idleft, idright, tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_scalar)) {
+                                generador.appendCod3D(id + " = " + lexemaDe(dec_scalar));
+                            } else {
+                                generador.appendCod3D(id + " = 0");
+                            }
+                        }
+                        if (dec_scalar != "expint" && dec_scalar != "PYC"){
+                            SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo expint |" + " Linea:" + idleft + " Columna: " + idright);
+                        }
+                    :}
+                    | FRAC_KW SEP ID:id declaracion_scalar_resto:dec_scalar
+                    {:
+                        if (tabla.existe(id)){
+                            SemanticErrors.appendSemanticError("Error semantico: Este identificador ya esta declarado (Produccion declaracion_escalar_FRAC) |" + " Linea:" + idleft + " Columna: " + idright);
+                        }else{
+                            tabla.insertar(new tabla.Simbolo(id, "frac", "variable", idleft, idright, tabla.getScopeActual()));
+                            if (!"PYC".equals(dec_scalar)) {
+                                generador.appendCod3D(id + " = " + lexemaDe(dec_scalar));
+                            } else {
+                                generador.appendCod3D(id + " = 0.0");
+                            }
+                        }
+                        if (dec_scalar != "frac" && dec_scalar != "PYC"){
+                            SemanticErrors.appendSemanticError("Error semantico: Valor asignado no es de tipo frac |" + " Linea:" + dec_scalarleft + " Columna: " + dec_scalarright);
+                        }
+                    :}
+                     ;
+
+// Parte final de una declaracion escalar: termina sola o con un valor inicial.
+declaracion_scalar_resto ::= PYC {: RESULT = "PYC"; :}
+                           | ASSIGN expresion:e1 PYC
+                            {: RESULT = e1; :}
+                           ;
+
+// Inicializacion de un arreglo bidimensional: lista de filas separadas por coma.
+filas_init ::= filas_init:_filas_init COMMA fila_init:_fila_init
+            {:
+                if ("error".equals(tipoDe(_filas_init)) || "error".equals(tipoDe(_fila_init))) {
+                    RESULT = "error";
+                } else if (!tipoDe(_filas_init).equals(tipoDe(_fila_init))) {
+                    SemanticErrors.appendSemanticError("Error semantico: tipos inconsistentes entre filas |" + " Linea:" + _filas_initleft + " Columna: " + _filas_initleft);
+                    RESULT = "error";
+                } else {
+                    String base = lexemaDe(_filas_init);
+                    String sinUltimoCorchete = base.substring(0, base.length() - 1);
+                    String nuevaFila = lexemaDe(_fila_init);
+                    String lex = sinUltimoCorchete + "," + nuevaFila + "]";
+                    RESULT = lex + ":" + tipoDe(_filas_init);
+                }
+            :}
+                        | fila_init:_fila_init
+            {:
+                if ("error".equals(tipoDe(_fila_init))) {
+                    RESULT = "error";
+                } else {
+                    // Una sola fila: la envolvemos entre corchetes exteriores
+                    String lex = "[" + lexemaDe(_fila_init) + "]";
+                    RESULT = lex + ":" + tipoDe(_fila_init);
+                }
+            :}
+             ;
+
+// Una fila del arreglo: lista de valores entre llaves.
+// La alternativa con 'error' permite recuperarse si el contenido de la fila esta malformado.
+fila_init ::= LLAVE_I lista_valores:_lista_valores LLAVE_D 
+            {: 
+                if ("error".equals(tipoDe(_lista_valores))) {
+                    RESULT = "error";
+                } else {
+                    String lex = "[" + lexemaDe(_lista_valores) + "]";
+                    RESULT = lex + ":" + tipoDe(_lista_valores);
+                }
+            :}
+            | LLAVE_I error LLAVE_D
+            {:
+                RESULT = "error";
+            :}
+            ;
+
+// Lista de valores numericos dentro de una fila, separados por coma.
+lista_valores ::= lista_valores:_lista_valores COMMA expr_aritmetica:expr_arit
+            {:
+                if ("error".equals(tipoDe(_lista_valores)) || "error".equals(tipoDe(expr_arit))) {
+                    RESULT = "error";
+                } else if (!tipoDe(_lista_valores).equals(tipoDe(expr_arit))) {
+                    SemanticErrors.appendSemanticError("Error semantico: tipos inconsistentes en lista de valores |" + " Linea:" + _lista_valoresleft + " Columna: " + _lista_valoresright);
+                    RESULT = "error";
+                } else {
+                    String lex = lexemaDe(_lista_valores) + "," + lexemaDe(expr_arit);
+                    RESULT = lex + ":" + tipoDe(_lista_valores);
+                }
+            :}
+
+            | expr_aritmetica:expr_arit
+            {:
+                if ("error".equals(tipoDe(expr_arit))) {
+                    RESULT = "error";
+                } else {
+                    RESULT = lexemaDe(expr_arit) + ":" + tipoDe(expr_arit);
+                }
+            :}
+            ;
+
+// Asignacion simple: un identificador recibe el valor de una expresion.
+asignacion ::= ID:id ASSIGN expresion:e1 PYC
+            {:
+                Simbolo s = tabla.buscarSimbolo(id);
+                if (s == null) {
+                    SemanticErrors.appendSemanticError("Error semantico: variable no declarada '" + id + "' | Linea:" + idleft + " Columna: " + idright);
+                }else if(s.getCategoria().equals("arreglo")){
+                    SemanticErrors.appendSemanticError("Error semantico: no se puede asignar directamente a un arreglo '" + id + "' | Linea:" + idleft + " Columna: " + idright);
+                }
+                else if (!s.getTipo().equals(tipoDe(e1))) {
+                    SemanticErrors.appendSemanticError("Error semantico: tipo incompatible en asignacion |" + " Linea:" + e1left + " Columna: " + idright);
+                }
+                
+                generador.appendCod3D(id + " = " + lexemaDe(e1));
+                RESULT = "";
+            :}
+             ;
+
+// Asignacion a una posicion especifica de un arreglo bidimensional.
+asignacion_array ::= acceso_array:arr ASSIGN expr_aritmetica:e PYC 
+                {:
+                    String[] partes = arr.split(":");
+                    String[] tokens = partes[0].split(",");
+                    String id = tokens[0];
+                    String i = tokens[1];
+                    String j = tokens[2];
+                    String tipoArr = partes[1];
+                    if (!tipoArr.equals(tipoDe(e))) {
+                        SemanticErrors.appendSemanticError("Error semantico: tipos no coinciden en asignacion de arreglo |" + " Linea:" + arrleft + " Columna: " + arrright);
+                    } else {
+                        String val = lexemaDe(e);
+                        generador.appendCod3D("arr_store " + id + ", " + i + ", " + j + ", " + val);
+                    }
+                    RESULT = "";
+                :}
+                ;
+
+// Acceso a un elemento de un arreglo con dos indices.
+// La segunda alternativa permite recuperarse si los indices estan malformados.
+acceso_array ::= ID:id ARR_I expr_aritmetica:e1 ARR_D ARR_I expr_aritmetica:e2 ARR_D 
+            {:
+                Simbolo s = tabla.buscarSimbolo(id);
+                if (!"int".equals(tipoDe(e1))) {
+                    SemanticErrors.appendSemanticError("Error: indice 1 no entero | Linea:" + e1left + " Columna: " + e1right);
+                }
+                if (!"int".equals(tipoDe(e2))) {
+                    SemanticErrors.appendSemanticError("Error: indice 2 no entero | Linea:" + e2left + " Columna: " + e2right);
+                }
+                if (s == null) {
+                    RESULT = "error";
+                } else {
+                    String i = lexemaDe(e1);
+                    String j = lexemaDe(e2);
+                    // Devolvemos id,i,j junto con el tipo
+                    RESULT = id + "," + i + "," + j + ":" + s.getTipo();
+                }
+            :}
+               | ID:id ARR_I error ARR_D ARR_I error ARR_D 
+            {:
+                RESULT = "error";
+            :}
+            ;
+
+// Estructura condicional: if con o sin else.
+//expresion aca debe ser tipo bool
+condicional ::= IF SEP PAR_I expresion:e1 PAR_D 
+                {:
+                    if (!"bool".equals(tipoDe(e1))) {
+                        SemanticErrors.appendSemanticError("Error: expresion del if debe ser booleana | Linea:" + e1left + " Columna: " + e1right);
+                    }
+                    String cond = lexemaDe(e1);
+                    String falseLabel = generador.nuevaEtiqueta();
+                    String endLabel   = generador.nuevaEtiqueta();
+                    generador.appendCod3D("if " + cond + " == 0 goto " + falseLabel);
+                    pilaIfFalse.push(falseLabel);
+                    pilaIfEnd.push(endLabel);
+                    RESULT = "";   
+                :}
+                bloque 
+                if_rest
+              ;
+if_rest ::= ELSE SEP 
+            {:
+                String falseLabel = pilaIfFalse.pop();
+                String endLabel   = pilaIfEnd.pop();
+                generador.appendCod3D("goto " + endLabel);
+                generador.appendCod3D(falseLabel + ":");
+                // volvemos a guardar endLabel para usarlo despues del bloque else
+                pilaIfEnd.push(endLabel);
+            :}
+            bloque 
+            {:
+                String endLabel = pilaIfEnd.pop();
+                generador.appendCod3D(endLabel + ":");
+            :}
+          | /* vacio */
+            {:
+                String falseLabel = pilaIfFalse.pop();
+                String endLabel   = pilaIfEnd.pop();
+                generador.appendCod3D(falseLabel + ":");
+                generador.appendCod3D(endLabel + ":");
+            :}
+            ;
+// Bucle do-while: ejecuta el bloque al menos una vez antes de evaluar la condicion.
+bucle ::= DO SEP 
+          {:
+              flagParaBreaks.push("bucle");
+              String inicioLabel = generador.nuevaEtiqueta();
+              String finLabel = generador.nuevaEtiqueta();
+              generador.appendCod3D(inicioLabel + ":");
+              etiquetasDoWhile.push(inicioLabel);
+              etiquetasFinBreak.push(finLabel);
+          :}
+            bloque WHILE SEP PAR_I expresion:e1 PAR_D PYC
+          {:
+                if (!"bool".equals(tipoDe(e1))) {
+                  SemanticErrors.appendSemanticError("Error semantico: condicion del do-while debe ser booleana |" + " Linea:" + e1left + " Columna: " + e1right);
+                }
+              String cond = lexemaDe(e1);
+              String inicioLabel = etiquetasDoWhile.pop();
+              String finLabel = etiquetasFinBreak.pop();
+              generador.appendCod3D("if " + cond + " != 0 goto " + inicioLabel);
+              generador.appendCod3D(finLabel + ":");
+              flagParaBreaks.pop();
+              RESULT = "";
+          :}
+        ;
+
+// Estructura switch: evalua una expresion y ejecuta el caso que coincida.
+// Expresion solo puede ser char y int e de igual manera case x, por ejemplo x debe ser del mismo tipo 
+multi_choice ::= SWITCH SEP PAR_I expresion:e1 PAR_D
+                 {:
+                     pilaCasosSwitch.push(new HashSet<>());
+                     String exprSwitch = lexemaDe(e1);
+                     String tempSwitch = generador.nuevaTemporal();
+                     generador.appendCod3D(tempSwitch + " = " + exprSwitch);
+                     pilaSwitchExpr.push(tempSwitch);
+                     String finLabel = generador.nuevaEtiqueta();
+                     String defaultLabel = generador.nuevaEtiqueta();
+                     etiquetasFinBreak.push(finLabel);
+                     pilaDefaultLabel.push(defaultLabel);
+                     cuerpoDeCase.clear();
+                     defaultBody = null;
+                 :}
+                LLAVE_I lista_casos:_lista_casos default_opt LLAVE_D
+                {:
+                    if (!tipoDe(e1).equals(tipoDe(_lista_casos))) {
+                        SemanticErrors.appendSemanticError("Error semantico: tipos en case/s no coincide con el tipo indicado en el switch" + " | Linea: " + _lista_casosleft + " Columna: " + _lista_casosright);
+                    }
+                    String tempSwitch = pilaSwitchExpr.peek();
+                    String defaultLabel = pilaDefaultLabel.peek();
+                    while (!pilaCaseChecks.isEmpty()) {
+                        String[] par = pilaCaseChecks.pop();
+                        String literal = par[0];
+                        String etiqueta = par[1];
+                        generador.appendCod3D("if " + tempSwitch + " == " + literal + " goto " + etiqueta);
+                    }
+                    generador.appendCod3D("goto " + defaultLabel);
+                    for (List<String> body : cuerpoDeCase) {
+                        for (String line : body) {
+                            generador.appendCod3D(line);
+                        }
+                    }
+                    if (defaultBody != null) {
+                        for (String line : defaultBody) {
+                            generador.appendCod3D(line);
+                        }
+                    }
+                    String finLabel = etiquetasFinBreak.peek();
+                    generador.appendCod3D(finLabel + ":");
+                    pilaCasosSwitch.pop();
+                    pilaSwitchExpr.pop();
+                    etiquetasFinBreak.pop();
+                    pilaDefaultLabel.pop();
+                    RESULT = "";
+                :}
+               ;
+
+// Uno o mas casos dentro de un switch.
+lista_casos ::= lista_casos:_lista_casos caso:_caso
+            {:
+                String t1 = tipoDe(_lista_casos);
+                String t2 = tipoDe(_caso);
+                if ("error".equals(t1) || "error".equals(t2)) {
+                    RESULT = "error";
+                } else if (!t1.equals(t2)) {
+                    SemanticErrors.appendSemanticError("Error semantico: tipos inconsistentes en casos |" + " Linea: " + _casoleft + " Columna: " + _casoright );
+                    RESULT = "error";
+                } else {
+                    RESULT = _lista_casos;   
+                }
+            :}
+              | caso:_caso {: RESULT = _caso; :}
+              ;
+
+// Un caso individual: etiqueta literal y sus sentencias asociadas.
+caso ::= CASE SEP literal_caso:_literal_caso 
+         {:
+             // Verificar duplicado
+             if (!pilaCasosSwitch.isEmpty()) {
+                 HashSet<String> casosActual = pilaCasosSwitch.peek();
+                 String clave = _literal_caso;  
+                 if (casosActual.contains(clave)) {
+                     SemanticErrors.appendSemanticError("Error semantico: case duplicado '" + lexemaDe(clave) + "' en switch" + " | Linea: " + _literal_casoleft + " Columna: " + _literal_casoright);
+                 } else {
+                     casosActual.add(clave);
+                 }
+             }
+             generador.startCapture();
+         :}
+         DOSPUNTOS 
+         {:
+             String labelCaso = generador.nuevaEtiqueta();
+             generador.appendCod3D(labelCaso + ":");
+             pilaCaseChecks.push(new String[]{lexemaDe(_literal_caso), labelCaso});
+             flagParaBreaks.push("case");
+         :}
+         sentencias_opt 
+         {:
+             flagParaBreaks.pop();
+             generador.stopCapture();
+             List<String> body = generador.getCapturedCode();
+             cuerpoDeCase.add(body);
+             RESULT = _literal_caso;
+         :}
+        ;
+
+// Caso por defecto opcional al final del switch.
+default_opt ::= DEFAULT SEP DOSPUNTOS
+                {:
+                    flagParaBreaks.push("default");
+                    String defaultLabel = pilaDefaultLabel.peek();
+                    generador.startCapture();
+                    generador.appendCod3D(defaultLabel + ":");
+                :}
+                sentencias
+                {:
+                    flagParaBreaks.pop();
+                    generador.stopCapture();
+                    defaultBody = generador.getCapturedCode();
+                :}
+              | /* vacio */
+                {:
+                    // sin default: la etiqueta por defecto será la de fin
+                    String finLabel = etiquetasFinBreak.peek();
+                    pilaDefaultLabel.pop();
+                    pilaDefaultLabel.push(finLabel);
+                :}
+              ;
+
+// Valores literales validos como etiqueta de un caso: numero, caracter o booleano.
+literal_caso ::= numero:num1 
+                {: 
+                    RESULT = num1;   
+                :}
+               | CHAR_LIT:ch 
+                {: 
+                    RESULT = ch + ":char"; 
+                :}
+               | TRUE {: RESULT = "true:bool"; :}
+               | FALSE {: RESULT = "false:bool"; :}
+               ;
+
+// Instruccion de entrada: lee desde consola hacia una variable o posicion de arreglo.
+// entrada/CIN Debe permitir las funciones de leer (enteros y flotantes) 
+entrada ::= CIN SEP PAR_I ID:id PAR_D 
+        {:
+            Simbolo s = tabla.buscarSimbolo(id);
+            if (s == null) {
+                SemanticErrors.appendSemanticError("Error semantico: variable no declarada en CIN |" + " Linea: " + idleft + " Columna: " + idright);
+            } else {
+                String t = s.getTipo();
+                if (!"int".equals(t) && !"float".equals(t)) {
+                    SemanticErrors.appendSemanticError("Error semantico: CIN solo admite int/float |" + " Linea: " + idleft + " Columna: " + idright);
+                } else {
+                    generador.appendCod3D("read " + id);
+                }
+            }
+            RESULT = "";
+        :}
+        ;
+
+// Instruccion de salida: imprime en consola uno o varios elementos.
+// salida estándar/COUT permite :(cadena caracter(es decir un string o bien un solo char), enteros, boolean y flotantes),
+salida ::= COUT SEP PAR_I lista_salida PAR_D
+         {:
+             RESULT = "";
+         :}
+         ;
+// Lista de elementos a imprimir, separados por coma.
+// Nota: Desd el flex se pasa como token tanto como numero entero como el flotante se pasa como "NUM" por lo que en este caso el terminal NUM corresponde a ambos
+lista_salida ::= STRING_LIT:s
+                {: 
+                    generador.appendCod3D("print_string " + s);
+                    RESULT = "string";
+                :}
+               | CHAR_LIT:c
+                {: 
+                    generador.appendCod3D("print_char " + c);
+                    RESULT = "string";
+                :}
+               | numero:n
+                {:
+                    // n tiene formato "temp:tipo"
+                    String lex = lexemaDe(n);
+                    generador.appendCod3D("print " + lex);
+                    RESULT = n;
+                :}
+               | atomo_bool:b
+                {:
+                    String lex = lexemaDe(b);
+                    generador.appendCod3D("print " + lex);
+                    RESULT = b;
+                :}
+               | llamada_funcion:call
+                {:
+                    String lex = lexemaDe(call);
+                    generador.appendCod3D("print " + lex);
+                    RESULT = call;
+                :}
+               | acceso_array:arr
+                {:
+                    String[] partes = arr.split(":");
+                    String[] tokens = partes[0].split(",");
+                    String id = tokens[0];
+                    String i = tokens[1];
+                    String j = tokens[2];
+                    String t = generador.nuevaTemporal();
+                    generador.appendCod3D(t + " = arr_load " + id + ", " + i + ", " + j);
+                    generador.appendCod3D("print " + t);
+                    RESULT = arr;
+                :}
+               | ID:id
+                {:
+                    Simbolo s = tabla.buscarSimbolo(id);
+                    if(s == null){
+                        SemanticErrors.appendSemanticError("Error semantico: variable no declarada en COUT" + " | Linea: " + idleft + " Columna: " + idright);
+                        RESULT = "error";
+                    } else if (!"int".equals(s.getTipo()) && !"float".equals(s.getTipo()) && !"bool".equals(s.getTipo()) && !"char".equals(s.getTipo()) && !"string".equals(s.getTipo())) {
+                        SemanticErrors.appendSemanticError("Error semantico: tipo no permitido en COUT" + " | Linea: " + idleft + " Columna: " + idright);
+                        RESULT = "error";
+                    } else if (s.getCategoria() == "arreglo") {
+                        SemanticErrors.appendSemanticError("Error semantico: este identificador es de un arreglo hacen falta los indices de acceso" + " | Linea: " + idleft + " Columna: " + idright);
+                        RESULT = "error";
+
+                    } 
+                    else {
+                        generador.appendCod3D("print " + id);
+                        RESULT = s.getTipo();
+                    }
+                :}
+               ;
+
+// Una expresion puede ser logica o un literal de cadena de texto.
+expresion ::= expr_logica:expr_log {: RESULT = expr_log; :}
+            | STRING_LIT:_string_lit {: 
+            
+            
+            RESULT = _string_lit + ":string"; :}
+            ;
+
+// Expresion logica: conjunciones unidas opcionalmente por OR.
+expr_logica ::= expr_conjuncion:_expr_conjuncion resto_disyuncion:_resto_disyuncion
+            {:
+                String a = lexemaDe(_expr_conjuncion);
+                String b = lexemaDe(_resto_disyuncion);
+                String tA = tipoDe(_expr_conjuncion);
+                String tB = tipoDe(_resto_disyuncion);
+                if("vacio".equals(_resto_disyuncion)){
+                    RESULT = _expr_conjuncion;
+                } else if("bool".equals(tipoDe(_expr_conjuncion)) && "bool".equals(tipoDe(_resto_disyuncion))){
+                    String lex = "(" + lexemaDe(_expr_conjuncion) + " OR " + lexemaDe(_resto_disyuncion) + ")";
+                    String t = generador.nuevaTemporal();
+                    String Ltrue = generador.nuevaEtiqueta();
+                    String Lend = generador.nuevaEtiqueta();
+                    generador.appendCod3D("if " + a + " == 1 goto " + Ltrue);
+                    generador.appendCod3D(t + " = " + b);
+                    generador.appendCod3D("goto " + Lend);
+                    generador.appendCod3D(Ltrue + ":");
+                    generador.appendCod3D(t + " = 1");
+                    generador.appendCod3D(Lend + ":");
+                    RESULT = t + ":bool";
+                } else {
+                    SemanticErrors.appendSemanticError("Error semantico: operacion OR invalida" + " | Linea: " + _resto_disyuncionleft + " Columna: " + _resto_disyuncionright);
+                    RESULT = "error";
+                }
+            :}
+            ;
+
+// Parte derecha de una disyuncion: puede continuar con mas OR o terminar.
+resto_disyuncion ::= OR expr_conjuncion:_expr_conjuncion resto_disyuncion:_resto_disyuncion
+                {:
+                    String t1 = tipoDe(_expr_conjuncion);
+                    String t2 = tipoDe(_resto_disyuncion);
+                    String a = lexemaDe(_expr_conjuncion);
+                    
+                    if(!"bool".equals(t1)) {
+                        SemanticErrors.appendSemanticError("Error semantico: operando de OR no booleano" + " | Linea: " + _expr_conjuncionleft + " Columna: " + _expr_conjuncionright);
+                        RESULT = "error";
+                    }
+                    // Si el resto es vacío, entonces el OR tiene un solo operando (el de la derecha)
+                    else if ("vacio".equals(t2)) {
+                        // No se genera código, se devuelve la expresión tal cual
+                        RESULT = _expr_conjuncion;
+                    }
+                    else if (!"bool".equals(t2)) {
+                        SemanticErrors.appendSemanticError("Error semantico: operando de OR no booleano" + " | Linea: " + _resto_disyuncionleft + " Columna: " + _resto_disyuncionright);
+                        RESULT = "error";
+                    }
+                    else {
+                        // Caso normal: OR con dos operandos válidos
+                        String b = lexemaDe(_resto_disyuncion);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " == 1 goto " + Ltrue);
+                        generador.appendCod3D(t + " = " + b);
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                | /* vacio */
+                {:
+                    RESULT = "vacio";
+                :}
+                ;
+
+// Expresion de conjuncion: negaciones unidas opcionalmente por AND.
+expr_conjuncion ::= expr_negacion:_expr_negacion resto_conjuncion:_resto_conjuncion
+                {:
+                    String a = lexemaDe(_expr_negacion);
+                    String b = lexemaDe(_resto_conjuncion);
+                    String tA = tipoDe(_expr_negacion);
+                    String tB = tipoDe(_resto_conjuncion);
+
+                    if("vacio".equals(_resto_conjuncion)){
+                        RESULT = _expr_negacion;
+                    } else if("bool".equals(tipoDe(_expr_negacion)) && "bool".equals(tipoDe(_resto_conjuncion))){
+                        String lex = "(" + lexemaDe(_expr_negacion) + " AND " + lexemaDe(_resto_conjuncion) + ")";
+                        String t = generador.nuevaTemporal();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " == 0 goto " + Lfalse);
+                        generador.appendCod3D(t + " = " + b);
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    } else {
+                        SemanticErrors.appendSemanticError("Error semantico: operacion AND invalida" + " | Linea: " + _resto_conjuncionleft + " Columna: " + _resto_conjuncionright);
+                        RESULT = "error";
+                    }
+                :}
+                ;
+
+// Parte derecha de una conjuncion: puede continuar con mas AND o terminar.
+resto_conjuncion ::= AND expr_negacion:_expr_negacion resto_conjuncion:_resto_conjuncion
+                {:
+                    String t1 = tipoDe(_expr_negacion);
+                    String t2 = tipoDe(_resto_conjuncion);
+                    String a = lexemaDe(_expr_negacion);
+                    
+                    if(!"bool".equals(t1)) {
+                        SemanticErrors.appendSemanticError("Error semantico: operando de AND no booleano" + " | Linea: " + _expr_negacionleft + " Columna: " + _expr_negacionright);
+                        RESULT = "error";
+                    }
+                    else if ("vacio".equals(t2)) {
+                        RESULT = _expr_negacion;
+                    }
+                    else if (!"bool".equals(t2)) {
+                        SemanticErrors.appendSemanticError("Error semantico: operando de AND no booleano" + " | Linea: " + _resto_conjuncionleft + " Columna: " + _resto_conjuncionright);
+                        RESULT = "error";
+                    }
+                    else {
+                        String b = lexemaDe(_resto_conjuncion);
+                        String t = generador.nuevaTemporal();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " == 0 goto " + Lfalse);
+                        generador.appendCod3D(t + " = " + b);
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                | /* vacio */
+                {:
+                    RESULT = "vacio";
+                :}
+                ;
+
+// Negacion logica: puede aplicarse repetidamente o delegar en una comparacion.
+expr_negacion ::= NOT expr_negacion:_expr_negacion
+            {:
+                if(!"bool".equals(tipoDe(_expr_negacion))){
+                    SemanticErrors.appendSemanticError("Error semantico: NOT requiere expresion booleana" + " | Linea: " + _expr_negacionleft + " Columna: " + _expr_negacionright);
+                    RESULT = "error";
+                } else {
+                    String lex = "NOT " + lexemaDe(_expr_negacion);
+                   // RESULT = lex + ":bool";
+                    String a = lexemaDe(_expr_negacion);
+                    String t = generador.nuevaTemporal();
+                    generador.appendCod3D(t + " = 1 - " + a);
+                    RESULT = t + ":bool";
+                }
+            :}
+            | comparacion:_comparacion
+            {:
+                RESULT = _comparacion;
+            :}
+            ;
+
+// Una comparacion puede ser cualquiera de los operadores relacionales,
+// una expresion aritmetica sola, o un literal booleano.
+comparacion ::= expr_igual:_expr_igual {: RESULT = _expr_igual; :}
+              | expr_n_igual:_expr_n_igual {: RESULT = _expr_n_igual; :}
+              | expr_menor:_expr_menor {: RESULT = _expr_menor; :}
+              | expr_menor_igual:_expr_menor_igual {: RESULT = _expr_menor_igual; :}
+              | expr_mayor:_expr_mayor {: RESULT = _expr_mayor; :}
+              | expr_mayor_igual:_expr_mayor_igual {: RESULT = _expr_mayor_igual; :}
+              | expr_aritmetica:_expr_aritmetica {: RESULT = _expr_aritmetica; :}
+              | atomo_bool:_atomo_bool {: RESULT = _atomo_bool; :}
+              ;
+
+// Comparaciones relacionales: cada operador se escribe como palabra clave
+// seguida de dos operandos entre parentesis.
+// Solo enteros flotantes y expresiones que puedan dar como resultado un bool.
+expr_igual ::= EQUAL PAR_I expr_logica:_expr_logica1 COMMA expr_logica:_expr_logica2 PAR_D
+                {:
+                    String t1 = tipoDe(_expr_logica1);
+                    String t2 = tipoDe(_expr_logica2);
+                    if(!"int".equals(t1) && !"float".equals(t1) && !"bool".equals(t1)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 1 de igualdad" + " | Linea: " + _expr_logica1left + " Columna: " + _expr_logica1right);
+                        RESULT = "error";
+                    } else if(!"int".equals(t2) && !"float".equals(t2) && !"bool".equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 2 de igualdad" + " | Linea: " + _expr_logica2left + " Columna: " + _expr_logica2right);
+                        RESULT = "error";
+                    } else if(!t1.equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en igualdad" + " | Linea: " + _expr_logica2left + " Columna: " + _expr_logica2right);
+                        RESULT = "error";
+                    } else {
+                        String lex = "equal(" + lexemaDe(_expr_logica1) + "," + lexemaDe(_expr_logica2) + ")";
+                        String a = lexemaDe(_expr_logica1);
+                        String b = lexemaDe(_expr_logica2);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " == " + b + " goto " + Ltrue);
+                        generador.appendCod3D("goto " + Lfalse);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                ;
+
+expr_n_igual ::= N_EQUAL PAR_I expr_logica:_expr_logica1 COMMA expr_logica:_expr_logica2 PAR_D
+                {:
+                    String t1 = tipoDe(_expr_logica1);
+                    String t2 = tipoDe(_expr_logica2);
+                    if(!"int".equals(t1) && !"float".equals(t1) && !"bool".equals(t1)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 1 de desigualdad" + " | Linea: " + _expr_logica1left + " Columna: " + _expr_logica1right);
+                        RESULT = "error";
+                    } else if(!"int".equals(t2) && !"float".equals(t2) && !"bool".equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 2 de desigualdad" + " | Linea: " + _expr_logica2left + " Columna: " + _expr_logica2right);
+                        RESULT = "error";
+                    } else if(!t1.equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en desigualdad" + " | Linea: " + _expr_logica2left + " Columna: " + _expr_logica2right);
+                        RESULT = "error";
+                    } else {
+                        String a = lexemaDe(_expr_logica1);
+                        String b = lexemaDe(_expr_logica2);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " != " + b + " goto " + Ltrue);
+                        generador.appendCod3D("goto " + Lfalse);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                ;
+
+// Solo enteros y flotantes
+expr_menor ::= LESS_T PAR_I expr_aritmetica:expr_aritmetica1 COMMA expr_aritmetica:expr_aritmetica2 PAR_D
+                {:
+                    String t1 = tipoDe(expr_aritmetica1);
+                    String t2 = tipoDe(expr_aritmetica2);
+                    if(!"int".equals(t1) && !"float".equals(t1)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 1" + " | Linea: " + expr_aritmetica1left + " Columna: " + expr_aritmetica1right);
+                        RESULT = "error";
+                    } else if(!"int".equals(t2) && !"float".equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 2" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else if(!t1.equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: los tipos no coinciden" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else {
+                        String lex = "<(" + lexemaDe(expr_aritmetica1) + "," + lexemaDe(expr_aritmetica2) + ")";
+                        String a = lexemaDe(expr_aritmetica1);
+                        String b = lexemaDe(expr_aritmetica2);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " < " + b + " goto " + Ltrue);
+                        generador.appendCod3D("goto " + Lfalse);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                ;
+
+expr_menor_igual ::= LESS_TE PAR_I expr_aritmetica:expr_aritmetica1 COMMA expr_aritmetica:expr_aritmetica2 PAR_D
+                {:
+                    String t1 = tipoDe(expr_aritmetica1);
+                    String t2 = tipoDe(expr_aritmetica2);
+                    if(!"int".equals(t1) && !"float".equals(t1)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 1" + " | Linea: " + expr_aritmetica1left + " Columna: " + expr_aritmetica1right);
+                        RESULT = "error";
+                    } else if(!"int".equals(t2) && !"float".equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 2" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else if(!t1.equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: los tipos no coinciden" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else {
+                        String lex = "<=" + lexemaDe(expr_aritmetica1) + "," + lexemaDe(expr_aritmetica2) + ")";
+                        String a = lexemaDe(expr_aritmetica1);
+                        String b = lexemaDe(expr_aritmetica2);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " <= " + b + " goto " + Ltrue);
+                        generador.appendCod3D("goto " + Lfalse);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                ;
+
+expr_mayor ::= GREATER_T PAR_I expr_aritmetica:expr_aritmetica1 COMMA expr_aritmetica:expr_aritmetica2 PAR_D
+                {:
+                    String t1 = tipoDe(expr_aritmetica1);
+                    String t2 = tipoDe(expr_aritmetica2);
+                    if(!"int".equals(t1) && !"float".equals(t1)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 1" + " | Linea: " + expr_aritmetica1left + " Columna: " + expr_aritmetica1right);
+                        RESULT = "error";
+                    } else if(!"int".equals(t2) && !"float".equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 2" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else if(!t1.equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: los tipos no coinciden" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else {
+                        String lex = ">(" + lexemaDe(expr_aritmetica1) + "," + lexemaDe(expr_aritmetica2) + ")";
+                        String a = lexemaDe(expr_aritmetica1);
+                        String b = lexemaDe(expr_aritmetica2);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " > " + b + " goto " + Ltrue);
+                        generador.appendCod3D("goto " + Lfalse);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                ;
+
+expr_mayor_igual ::= GREATER_TE PAR_I expr_aritmetica:expr_aritmetica1 COMMA expr_aritmetica:expr_aritmetica2 PAR_D
+                {:
+                    String t1 = tipoDe(expr_aritmetica1);
+                    String t2 = tipoDe(expr_aritmetica2);
+                    if(!"int".equals(t1) && !"float".equals(t1)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 1" + " | Linea: " + expr_aritmetica1left + " Columna: " + expr_aritmetica1right);
+                        RESULT = "error";
+                    } else if(!"int".equals(t2) && !"float".equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: tipo invalido en expresion 2" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else if(!t1.equals(t2)){
+                        SemanticErrors.appendSemanticError("Error semantico: los tipos no coinciden" + " | Linea: " + expr_aritmetica2left + " Columna: " + expr_aritmetica2right);
+                        RESULT = "error";
+                    } else {
+                        String lex = ">=" + lexemaDe(expr_aritmetica1) + "," + lexemaDe(expr_aritmetica2) + ")";
+                        String a = lexemaDe(expr_aritmetica1);
+                        String b = lexemaDe(expr_aritmetica2);
+                        String t = generador.nuevaTemporal();
+                        String Ltrue = generador.nuevaEtiqueta();
+                        String Lfalse = generador.nuevaEtiqueta();
+                        String Lend = generador.nuevaEtiqueta();
+                        generador.appendCod3D("if " + a + " >= " + b + " goto " + Ltrue);
+                        generador.appendCod3D("goto " + Lfalse);
+                        generador.appendCod3D(Ltrue + ":");
+                        generador.appendCod3D(t + " = 1");
+                        generador.appendCod3D("goto " + Lend);
+                        generador.appendCod3D(Lfalse + ":");
+                        generador.appendCod3D(t + " = 0");
+                        generador.appendCod3D(Lend + ":");
+                        RESULT = t + ":bool";
+                    }
+                :}
+                ;
+
+// Un atomo booleano es True, False, o una expresion logica entre parentesis.
+atomo_bool ::= TRUE 
+        {: 
+            String t = generador.nuevaTemporal();
+            generador.appendCod3D(t + " = 1");
+            RESULT = t + ":bool";
+        :}
+        | FALSE 
+        {: 
+            String t = generador.nuevaTemporal();
+            generador.appendCod3D(t + " = 0");
+            RESULT = t + ":bool";
+        :}
+        | PAR_I expr_logica:_expr_logica PAR_D 
+        {: 
+            RESULT = _expr_logica; 
+        :}
+        ;
+
+// Expresion aritmetica: terminos unidos por suma o resta.
+expr_aritmetica ::= termino:_termino
+                    {:
+                        exprAcc.push(lexemaDe(_termino));
+                         exprTipo.push(tipoDe(_termino));
+                    :}
+                    resto_expresion
+                    {:
+                        String valor = exprAcc.pop();
+                        String tipo  =  exprTipo.pop();
+                        RESULT = valor + ":" + tipo;
+                    :}
+                  ;
+
+// Parte derecha de una suma o resta: puede continuar o terminar.
+resto_expresion ::= PLUS termino:_termino
+                    {:
+                        String izq = exprAcc.pop();
+                        String tipoIzq =  exprTipo.pop();
+                        String der = lexemaDe(_termino);
+                        String tipoDer = tipoDe(_termino);
+                        if (!tipoIzq.equals(tipoDer) || (!tipoIzq.equals("int") && !tipoIzq.equals("float"))) {
+                            SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en suma | Linea:" + _terminoleft + " Columna:" + _terminoright);
+                            exprAcc.push("error");  exprTipo.push("error");
+                        } else {
+                            String t = generador.nuevaTemporal();
+                            generador.appendCod3D(t + " = " + izq + " + " + der);
+                            exprAcc.push(t);
+                             exprTipo.push(tipoIzq);
+                        }
+                        RESULT = "";
+                    :}
+                    resto_expresion
+                  | MINUS termino:_termino
+                    {:
+                        String izq = exprAcc.pop();
+                        String tipoIzq =  exprTipo.pop();
+                        String der = lexemaDe(_termino);
+                        String tipoDer = tipoDe(_termino);
+                        if (!tipoIzq.equals(tipoDer) || (!tipoIzq.equals("int") && !tipoIzq.equals("float"))) {
+                            SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en resta | Linea:" + _terminoleft + " Columna:" + _terminoright);
+                            exprAcc.push("error");  exprTipo.push("error");
+                        } else {
+                            String t = generador.nuevaTemporal();
+                            generador.appendCod3D(t + " = " + izq + " - " + der);
+                            exprAcc.push(t);
+                             exprTipo.push(tipoIzq);
+                        }
+                        RESULT = "";
+                    :}
+                    resto_expresion
+                  | /* vacio */
+                    {:
+                        RESULT = "";
+                    :}
+                  ;
+
+// Un termino es una potencia seguida opcionalmente de multiplicacion, division o modulo.
+termino ::= potencia:_potencia
+            {:
+                exprAcc.push(lexemaDe(_potencia));
+                 exprTipo.push(tipoDe(_potencia));
+            :}
+            resto_termino
+            {:
+                String valor = exprAcc.pop();
+                String tipo  =  exprTipo.pop();
+                RESULT = valor + ":" + tipo;
+            :}
+          ;
+
+// Parte derecha de un termino: puede continuar con mas operaciones o terminar.
+resto_termino ::= MULT potencia:_potencia
+                  {:
+                      String izq = exprAcc.pop();
+                      String tipoIzq =  exprTipo.pop();
+                      String der = lexemaDe(_potencia);
+                      String tipoDer = tipoDe(_potencia);
+                      if (!tipoIzq.equals(tipoDer) || (!tipoIzq.equals("int") && !tipoIzq.equals("float"))) {
+                          SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en multiplicacion | Linea:" + _potencialeft + " Columna:" + _potenciaright);
+                          exprAcc.push("error");  exprTipo.push("error");
+                      } else {
+                          String t = generador.nuevaTemporal();
+                          generador.appendCod3D(t + " = " + izq + " * " + der);
+                          exprAcc.push(t);
+                           exprTipo.push(tipoIzq);
+                      }
+                      RESULT = "";
+                  :}
+                  resto_termino
+                | DIV potencia:_potencia
+                  {:
+                      String izq = exprAcc.pop();
+                      String tipoIzq =  exprTipo.pop();
+                      String der = lexemaDe(_potencia);
+                      String tipoDer = tipoDe(_potencia);
+                      if (!tipoIzq.equals(tipoDer) || (!tipoIzq.equals("int") && !tipoIzq.equals("float"))) {
+                          SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en division | Linea:" + _potencialeft + " Columna:" + _potenciaright);
+                          exprAcc.push("error");  exprTipo.push("error");
+                      } else {
+                          String t = generador.nuevaTemporal();
+                          generador.appendCod3D(t + " = " + izq + " / " + der);
+                          exprAcc.push(t);
+                           exprTipo.push(tipoIzq);
+                      }
+                      RESULT = "";
+                  :}
+                  resto_termino
+                | MOD potencia:_potencia
+                  {:
+                      String izq = exprAcc.pop();
+                      String tipoIzq =  exprTipo.pop();
+                      String der = lexemaDe(_potencia);
+                      String tipoDer = tipoDe(_potencia);
+                      if (!tipoIzq.equals(tipoDer) || (!tipoIzq.equals("int") && !tipoIzq.equals("float"))) {
+                          SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en modulo | Linea:" + _potencialeft + " Columna:" + _potenciaright);
+                          exprAcc.push("error");  exprTipo.push("error");
+                      } else {
+                          String t = generador.nuevaTemporal();
+                          generador.appendCod3D(t + " = " + izq + " % " + der);
+                          exprAcc.push(t);
+                           exprTipo.push(tipoIzq);
+                      }
+                      RESULT = "";
+                  :}
+                  resto_termino
+                | /* vacio */
+                  {:
+                      RESULT = "";
+                  :}
+                ;
+
+// Una potencia es un factor que puede elevarse a otro factor.
+potencia ::= factor:_factor resto_potencia:_resto_potencia
+        {:
+            String tFact = tipoDe(_factor);
+            String tRest = tipoDe(_resto_potencia);
+            String a = lexemaDe(_factor);
+            String b = lexemaDe(_resto_potencia);
+            String tA = tipoDe(_factor);
+            String tB = tipoDe(_resto_potencia);
+            if("vacio".equals(tRest)){
+                RESULT = _factor;
+            } else if(tFact.equals(tRest) && ("int".equals(tFact) || "float".equals(tFact))){
+                String t = generador.nuevaTemporal();
+                generador.appendCod3D(t + " = " + a + " ^ " + b);
+                RESULT = t + ":" + tA;
+            } else {
+                SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en potencia" + " | Linea: " + _resto_potencialeft + " Columna: " + _resto_potenciaright);
+                RESULT = "error";
+            }
+        :}
+        ;
+
+// Parte derecha de una potencia: puede encadenarse o terminar.
+resto_potencia ::= POW factor:_factor resto_potencia:_resto_potencia
+            {:
+                String t1 = tipoDe(_factor);
+                String t2 = tipoDe(_resto_potencia);
+                String a = lexemaDe(_factor);
+                String b = lexemaDe(_resto_potencia);
+                String tA = tipoDe(_factor);
+                String tB = tipoDe(_resto_potencia);
+
+                if("vacio".equals(t2)){
+                    RESULT = _factor;
+                } else if(t1.equals(t2) && ("int".equals(t1) || "float".equals(t1))){
+                    String t = generador.nuevaTemporal();
+                    generador.appendCod3D(t + " = " + a + " ^ " + b);
+                    RESULT = t + ":" + tA;
+                } else {
+                    SemanticErrors.appendSemanticError("Error semantico: tipos incompatibles en potencia" + " | Linea: " + _resto_potencialeft + " Columna: " + _resto_potenciaright);
+                    RESULT = "error";
+                }
+            :}
+            | /* vacio */
+            {:
+                RESULT = "vacio";
+            :}
+            ;
+
+// Un factor es la unidad basica de una expresion aritmetica.
+// Puede ser un valor negado, un numero, un identificador, un caracter,
+// un acceso a arreglo, una llamada a funcion o una expresion entre parentesis.
+factor ::= unario:un {:RESULT = un; :}
+         | numero:num
+         {: 
+            RESULT = num; 
+         :}
+         | ID:id 
+        {: 
+            Simbolo s = tabla.buscarSimbolo(id);
+            if(s != null){
+                RESULT = id + ":" + s.getTipo();
+            } else {
+                SemanticErrors.appendSemanticError("Error semantico: variable no declarada" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            }
+        :}
+         | CHAR_LIT:_char_lit
+         {: 
+            RESULT = _char_lit + ":char"; 
+         :}
+         | acceso_array:_acceso_array 
+         {: 
+         
+             // arr tiene formato "id,i,j:tipo"
+             String[] partes = _acceso_array.split(":");
+             String[] tokens = partes[0].split(",");
+             String id = tokens[0];
+             String i = tokens[1];
+             String j = tokens[2];
+             String tipo = partes[1];
+             String t = generador.nuevaTemporal();
+             generador.appendCod3D(t + " = arr_load " + id + ", " + i + ", " + j);
+             RESULT = t + ":" + tipo;
+         
+         :}
+         | llamada_funcion:_llamada_funcion 
+         {: 
+            RESULT = _llamada_funcion; 
+         :}
+         | PAR_I expr_aritmetica:_expr_aritmetica PAR_D 
+         {: 
+            RESULT = _expr_aritmetica;
+         :}
+         ;
+
+// Operadores unarios: negacion de numero, incremento o decremento prefijo.
+unario ::= MINUS numero:_numero
+        {:
+            if(!"int".equals(tipoDe(_numero)) && !"float".equals(tipoDe(_numero))){
+                SemanticErrors.appendSemanticError("Error semantico: operador '-' requiere numero" + " | Linea: " + _numeroleft + " Columna: " + _numeroright);
+                RESULT = "error";
+            } else {
+                 String t = generador.nuevaTemporal();
+                 generador.appendCod3D(t + " = -" + lexemaDe(_numero));
+                 RESULT = t + ":" + tipoDe(_numero);
+            }
+        :}
+        | INC ID:id
+        {:
+            Simbolo s = tabla.buscarSimbolo(id);
+            
+            
+            if(s == null){
+                SemanticErrors.appendSemanticError("Error semantico: variable no declarada" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            }else if(s.getCategoria().equals("arreglo")){
+                SemanticErrors.appendSemanticError("Error semantico: ++ no puede aplicarse a un arreglo" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            } 
+            else if(!"int".equals(s.getTipo()) && !"float".equals(s.getTipo())){
+                SemanticErrors.appendSemanticError("Error semantico: ++ requiere variable numerica" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            } else {
+                 String t = generador.nuevaTemporal();
+                 generador.appendCod3D(t + " = " + id + " + 1");
+                 generador.appendCod3D(id + " = " + t);
+                 
+                 RESULT = t + ":" + s.getTipo();
+            }
+        :}
+        | DEC ID:id
+        {:
+            Simbolo s = tabla.buscarSimbolo(id);
+            if(s == null){
+                SemanticErrors.appendSemanticError("Error semantico: variable no declarada" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            }else if(s.getCategoria().equals("arreglo")){
+                SemanticErrors.appendSemanticError("Error semantico: -- no puede aplicarse a un arreglo" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            }
+            else if(!"int".equals(s.getTipo()) && !"float".equals(s.getTipo())){
+                SemanticErrors.appendSemanticError("Error semantico: -- requiere variable numerica" + " | Linea: " + idleft + " Columna: " + idright);
+                RESULT = "error";
+            } else {
+                 String t = generador.nuevaTemporal();
+                 generador.appendCod3D(t + " = " + id + " - 1");
+                 generador.appendCod3D(id + " = " + t);
+    
+                 RESULT = t + ":" + s.getTipo();
+            }
+        :}
+        ;
+
+// Literales numericos en sus distintos formatos.
+numero ::= INT_LIT:int_l 
+         {: 
+            String t = generador.nuevaTemporal();
+            generador.appendCod3D(t + " = " + int_l);
+            RESULT = t + ":int";
+         :}
+         | FLOAT_LIT:float_l 
+         {: 
+            String t = generador.nuevaTemporal();
+            generador.appendCod3D(t + " = " + float_l);
+            RESULT = t + ":float";            
+         :}
+         | FRAC_LIT:frac_l
+         {: 
+            String t = generador.nuevaTemporal();
+            generador.appendCod3D(t + " = " + frac_l);
+            RESULT = t + ":float";            
+         :}
+         | EXPINT_LIT:expint_l
+         {: 
+            String t = generador.nuevaTemporal();
+            generador.appendCod3D(t + " = " + expint_l);
+            RESULT = t +  ":int"; :}
+         ;
+
+// Llamada a una funcion: nombre seguido de argumentos entre parentesis.
+// La segunda alternativa permite recuperarse si los argumentos estan malformados.
+llamada_funcion ::= ID:id PAR_I argumentos:args PAR_D 
+                {:
+                    Simbolo s = tabla.buscarSimbolo(id);
+                    if (s == null) {
+                        SemanticErrors.appendSemanticError("Error semantico: funcion no declarada: " + id);
+                        RESULT = "error";
+                    } else {
+                            String tiposEsperados = s.getParametros();
+                            if (tiposEsperados == null || tiposEsperados.trim().isEmpty()) {
+                                tiposEsperados = "";
+                                System.out.println("La funcion " + id + " no tiene parametros");
+                            }else{
+                           
+                            String[] listadoParametros = tiposEsperados.split(",");
+                            StringBuilder tiposResultantes = new StringBuilder();
+                            for (int i = 0; i < listadoParametros.length; i++) {
+                                String[] partes = listadoParametros[i].split("_");
+                                String tipoDato = partes[1];
+                                tiposResultantes.append(tipoDato);
+                                if (i < listadoParametros.length - 1) tiposResultantes.append(",");
+                            }
+                            String resultadoFinal = tiposResultantes.toString();
+                            tiposEsperados = resultadoFinal;
+                            System.out.println("Tipos esperados por la funcion " + id + ": " + tiposEsperados);
+                        }
+                        String tiposRecibidos = args;
+                        System.out.println("Tipos recibidos en la llamada a " + id + ": " + tiposRecibidos);
+                        if (tiposEsperados == null) tiposEsperados = "";
+                        if (tiposRecibidos == null) tiposRecibidos = "";
+                        if (!tiposEsperados.equals(tiposRecibidos)) {
+                            SemanticErrors.appendSemanticError("Error semantico: la funcion " + id + " esperaba parametros (" + tiposEsperados + ") pero se recibieron (" + tiposRecibidos + ")");
+                            RESULT = "error";
+                        } else {
+                            generador.appendCod3D("call " + id);
+                            String resultado;
+                            if (s.getTipo().equals("empty")) {
+                                resultado = "void:empty";
+                            } else {
+                                String t = generador.nuevaTemporal();
+                                generador.appendCod3D(t + " = retval");
+                                resultado = t + ":" + s.getTipo();
+                            }
+                            RESULT = resultado;
+                        }
+                    }
+                :}
+                | ID PAR_I error PAR_D
+                {:
+                    RESULT = "error";
+                :}
+                ;
+
+// Lista de argumentos de una llamada: puede estar vacia, tener uno o varios separados por coma.
+argumentos ::= argumentos:args COMMA expresion:e
+            {:
+                String tipoArg = tipoDe(e);
+                String temp = lexemaDe(e);
+                generador.appendCod3D("push " + temp);
+                RESULT = args + "," + tipoArg;   // concatenar tipos
+            :}
+            | expresion:e
+            {:
+                String tipoArg = tipoDe(e);
+                String temp = lexemaDe(e);
+                generador.appendCod3D("push " + temp);
+                RESULT = tipoArg;
+            :}
+            | /* vacio */
+            {:
+                RESULT = "";
+            :}
+            ;
+
+// Todos los tipos de datos validos en el lenguaje para declaraciones y parametros.
+tipo ::= INT       {: RESULT = "int";    :}
+       | FLOAT     {: RESULT = "float";  :}
+       | CHAR      {: RESULT = "char";   :}
+       | STRING    {: RESULT = "string"; :}
+       | BOOL      {: RESULT = "bool";   :}
+       | EXPINT_KW {: RESULT = "expint"; :}
+       | FRAC_KW   {: RESULT = "frac";   :}
+       ;

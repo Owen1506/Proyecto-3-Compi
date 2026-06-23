@@ -1,0 +1,5 @@
+empty~__main__ <| |>  |: 
+	int~x <- 5!
+	int~iyn1<-10 + x !
+	string~micadena <- "Hola"!
+ :| 

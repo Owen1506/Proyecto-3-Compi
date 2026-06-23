@@ -1,0 +1,209 @@
+<programa> ::= <funciones> <funcMain> 
+<funciones> ::= <funcion> <funciones> | ε
+<funcion> ::= <tipoRetorno> <separador> <identificador> <parentesis_izq> <parametros> <parentesis_der> <bloque>
+
+<bloque> ::= <llave_izq> <sentencias> <llave_der> 
+
+<sentencias> ::= <sentencia> <sentencias> | ε
+<sentencia> ::= <condicional> | <bucles> | <multipleChoice> | <flowControl> | <asignaciones> 
+                | <declaraciones> | <expresiones> | <cin> | <cout>
+
+<expresiones> ::= <expresion> <fin_sentencia>
+<expresion> ::= <expresionLogica> | <exprChar> | <exprString>
+#<expresion> puede ser:
+#- una expresión lógica (que contiene: relacionales, aritméticas, booleanas)
+#- un caracter
+#- una cadena
+
+#---- expresión lógica ----
+<expresionLogica>  ::= <exprConjuncion> <restoDisyuncion>
+<restoDisyuncion>  ::= <disyuncion> <exprConjuncion> <restoDisyuncion> | ε
+
+<exprConjuncion>   ::= <exprNegacion> <restoConjuncion>
+<restoConjuncion>  ::= <conjuncion> <exprNegacion> <restoConjuncion> | ε
+
+<exprNegacion>     ::= <negacion> <exprNegacion> | <comparacion>
+
+#---- comparacion (relacional) ---- 
+#Cada operador tiene su propio no-terminal y sus propios operandos
+<comparacion> ::= <exprIgual>
+                | <exprNIgual>
+                | <exprMenor>
+                | <exprMenorIgual>
+                | <exprMayor>
+                | <exprMayorIgual>
+                | <expresionAritmetica>
+                | <atomoBool>
+
+#i. equal<|op1,op2|> Permite booleano
+<exprIgual>   ::= "equal" <parentesis_izq> <opIgualdad> ',' <opIgualdad> <parentesis_der>
+<opIgualdad>  ::= <expresionAritmetica> | <atomoBool>
+
+#ii. n_equal<|op1,op2|> Permite booleano
+<exprNIgual>  ::= "n_equal" <parentesis_izq> <opNIgualdad> ',' <opNIgualdad> <parentesis_der>
+<opNIgualdad> ::= <expresionAritmetica> | <atomoBool>
+
+#iii. less_t<|op1,op2|> solo numérico
+<exprMenor>   ::= "less_t" <parentesis_izq> <opMenor> ',' <opMenor> <parentesis_der>
+<opMenor>     ::= <expresionAritmetica>
+
+#iv. less_te<|op1,op2|> solo numérico
+<exprMenorIgual>  ::= "less_te" <parentesis_izq> <opMenorIgual> ',' <opMenorIgual> <parentesis_der>
+<opMenorIgual>    ::= <expresionAritmetica>
+
+#v. greather_t<|op1,op2|> solo numérico
+<exprMayor>   ::= "greather_t" <parentesis_izq> <opMayor> ',' <opMayor> <parentesis_der>
+<opMayor>     ::= <expresionAritmetica>
+
+#vi. greather_te<|op1,op2|> solo numérico
+<exprMayorIgual>  ::= "greather_te" <parentesis_izq> <opMayorIgual> ',' <opMayorIgual> <parentesis_der>
+<opMayorIgual>    ::= <expresionAritmetica>
+
+<atomoBool>   ::= <boolean> | <llamadaFuncion> | <parentesis_izq> <expresionLogica> <parentesis_der>
+
+#---- expresión aritmética (sin recursión izquierda) ----
+<expresionAritmetica> ::= <termino> <restoExpresion>
+<restoExpresion> ::= '+' <termino> <restoExpresion>
+                   | '-' <termino> <restoExpresion>
+                   | ε
+
+<termino>      ::= <potencia> <restoTermino>
+<restoTermino> ::= '*' <potencia> <restoTermino>
+                 | '/' <potencia> <restoTermino>
+                 | '%' <potencia> <restoTermino>
+                 | ε
+
+<potencia>      ::= <factor> <restoPotencia>
+<restoPotencia> ::= '^' <factor> <restoPotencia> | ε
+
+<factor> ::= 
+    <unario>
+  | <numero>
+  | <identificador>
+  | <accesoArray>
+  | <llamadaFuncion>
+  | <parentesis_izq> <expresionAritmetica> <parentesis_der>
+
+<unario> ::= '-' <litSignable>
+           | '++' <identificador>
+           | '--' <identificador>
+<litSignable> ::= <intN> | <floatN>
+
+#---- llamada a función ----
+<llamadaFuncion> ::= <identificador> <parentesis_izq> <argumentos> <parentesis_der>
+<argumentos>     ::= <argumento> | <argumento> ',' <argumentos> | ε
+<argumento>      ::= <expresion>
+
+#estructuras de control if-else, do-while, switch.
+<condicional>     ::= <estructuraIf> | <estructuraIfElse>
+<if>              ::= "if"
+<else>            ::= "else"
+<estructuraIf>    ::= <if> <separador> <parentesis_izq> <condicion> <parentesis_der> <bloque>
+<estructuraIfElse>::= <if> <separador> <parentesis_izq> <condicion> <parentesis_der> <bloque> <else> <separador> <bloque>
+<condicion>       ::= <expresionLogica>
+#condicion es una expresionLogica que puede contener:
+# expresiones relacionales con enteros y flotantes
+# o booleanos
+
+#---- do-while ----
+<bucles>  ::= <doWhile>
+<doWhile> ::= "do" <separador> <bloque> "while" <separador> <parentesis_izq> <condicion> <parentesis_der> <fin_sentencia>
+
+#---- switch ----
+<multipleChoice> ::= "switch" <separador> <parentesis_izq> <exprSwitch> <parentesis_der> <llave_izq> <listaCasos> <defaultOpc> <llave_der>
+<listaCasos>     ::= <caso> | <caso> <listaCasos>
+<caso>           ::= "case" <separador> <literalCaso> ':' <sentencias>
+<defaultOpc>     ::= "default" <separador> ':' <sentencias> | ε
+<exprSwitch>     ::= <expresionAritmetica> | <valorChar> | <boolean>
+<literalCaso>    ::= <numero> | <valorChar> | <boolean>
+
+#---- return y break ----
+<flowControl>    ::= <sentenciaReturn> | <sentenciaBreak>
+<sentenciaReturn>::= "return" <separador> <expresion> <fin_sentencia>
+<sentenciaBreak> ::= "break" <fin_sentencia>
+
+#---- declaraciones ----
+<declaraciones>    ::= <declaracionLocal> | <declaracionArray>
+<declaracionLocal> ::= <tipo> <separador> <identificador> <fin_sentencia>
+                     | <tipo> <separador> <identificador> '<-' <expresion> <fin_sentencia>
+
+<declaracionArray> ::= <tipoNumero> <separador> <identificador> <dimensiones> <fin_sentencia>
+                     | <tipoNumero> <separador> <identificador> <dimensiones> '<-' <llave_izq> <filasInit> <llave_der> <fin_sentencia>
+<filasInit>        ::= <filaInit> | <filaInit> ',' <filasInit>
+<filaInit>         ::= <llave_izq> <listaValores> <llave_der>
+<listaValores>     ::= <expresionAritmetica> | <expresionAritmetica> ',' <listaValores>
+
+#---- asignaciones ----
+<asignaciones>    ::= <asignacion> | <asignacionArray>
+<asignacion>      ::= <identificador> '<-' <expresion> <fin_sentencia>
+<asignacionArray> ::= <accesoArray>  '<-' <expresionAritmetica> <fin_sentencia>
+
+#---- cin y cout ----
+<cin>         ::= "cin"  <separador> <destinoLectura> <fin_sentencia>
+<destinoLectura> ::= <identificador> | <accesoArray>
+<cout>        ::= "cout" <separador> <listaSalida> <fin_sentencia>
+<listaSalida> ::= <itemSalida> | <itemSalida> ',' <listaSalida>
+<itemSalida>  ::= <exprString> | <exprChar> | <expresionAritmetica> | <expresionLogica>
+
+#---- comentarios ----
+<comentario>      ::= <comentarioLinea> | <comentarioMulti>
+<comentarioLinea> ::= '¡¡' <textoLinea>
+<comentarioMulti> ::= '{-' <textoMulti> '-}'
+
+#---- parámetros de función ----
+<parametros> ::= <parametro> | <parametro> ',' <parametros> | ε
+<parametro>  ::= <tipo> <separador> <identificador>
+
+<separador>      ::= '~'
+<parentesis_izq> ::= '<|'
+<parentesis_der> ::= '|>'
+<llave_izq>      ::= '|:'
+<llave_der>      ::= ':|'
+<fin_sentencia>  ::= '!'
+
+<conjuncion> ::= '@'
+<disyuncion> ::= '#'
+<negacion>   ::= '$'
+
+#---- tipos ----
+<tipo>       ::= <tipoNumero> | <tipoBool> | "char" | "string" | "expint" | "frac"
+<tipoBool>   ::= "bool" | "boolean"
+<tipoNumero> ::= <int> | <float>
+<tipoRetorno>::= <int> | <float> | "char" | <tipoBool> 
+
+#---- valores y literales ----
+<numero>      ::= <intN> | <floatN> | <enteroExp> | <fraccionario>
+<boolean>     ::= <True> | <False> | <identificador> | <llamadaFuncion>
+<True>        ::= "True"
+<False>       ::= "False"
+<char>        ::= "'" <contenidoChar> "'"
+<literalString>::= '"' <contenidoString> '"'
+<exprChar>    ::= <char> | <identificador> | <llamadaFuncion>
+<exprString>  ::= <literalString> | <identificador> | <llamadaFuncion>
+<valorChar>   ::= <char> | <identificador>
+
+<intN>         ::= '0' | <enteroNoCero> <digitosOpc>
+<floatN>       ::= <intN> '.' <digito> <digitosOpc>
+<enteroExp>    ::= <intN> 'e' <enteroPositivo>
+<fraccionario> ::= <enteroPositivo> '/' <enteroPositivo>
+<enteroPositivo>::= <enteroNoCero> <digitosOpc>
+<digitosOpc>   ::= <digito> <digitosOpc> | ε
+<enteroNoCero> ::= [1-9]
+<digito>       ::= [0-9]
+
+<identificador> ::= [a-zA-Z_][a-zA-Z0-9_]*
+<contenidoChar> ::= .
+<contenidoString>::= [^"]*
+<textoLinea>    ::= [^\n]*
+<textoMulti>    ::= [^-]* | '-' [^}] <textoMulti>
+
+#---- arreglos ----
+<dimensiones> ::= "<<" <enteroPositivo> ',' <enteroPositivo> ">>"
+<accesoArray> ::=  <identificador> "<<" <expresionAritmetica> "," <expresionAritmetica> ">>"
+
+<int>   ::= "int"
+<float> ::= "float"
+
+<main>     ::= "__main__"
+<empty>    ::= "empty"
+<funcMain> ::= <empty> <separador> <main> <parentesis_izq> <parentesis_der> <bloque>

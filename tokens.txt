@@ -1,0 +1,29 @@
+           LISTA DE TOKENS            
+TOKEN        LEXEMA          LINEA    COL      SCOPE/INFO     
+EMPTY        -               1        0        N/A            
+SEP          -               1        5        N/A            
+MAIN         __main__        1        6        Scope 0        
+PAR_I        -               1        15       N/A            
+PAR_D        -               1        18       N/A            
+LLAVE_I      -               1        22       N/A            
+INT          -               2        1        N/A            
+SEP          -               2        4        N/A            
+ID           x               2        5        Scope 1        
+ASSIGN       -               2        7        N/A            
+INT_LIT      5               2        10       N/A            
+PYC          -               2        11       N/A            
+INT          -               3        1        N/A            
+SEP          -               3        4        N/A            
+ID           iyn1            3        5        Scope 1        
+ASSIGN       -               3        9        N/A            
+INT_LIT      10              3        11       N/A            
+PLUS         -               3        14       N/A            
+ID           x               3        16       Scope 1        
+PYC          -               3        18       N/A            
+STRING       -               4        1        N/A            
+SEP          -               4        7        N/A            
+ID           micadena        4        8        Scope 1        
+ASSIGN       -               4        17       N/A            
+STRING_LIT   Hola            4        20       N/A            
+PYC          -               4        26       N/A            
+LLAVE_D      -               5        1        N/A            

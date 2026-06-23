@@ -1,0 +1,50 @@
+Revisión Proyecto #1 (Scanner, Parser)
+Compiladores e Intérpretes I Semestre 2026	 
+ 	 	 	 
+Valor:	12.5%	 	 
+Total de Puntos:	100	 	 
+Estudiante:	 	 
+Total Puntos Obtenidos:	96	 	 
+Nota:	96	 	 
+Porcentaje Obtenido:	12	 	 
+ 	 	 	 
+Ítem Funcionales	                                Puntos	Puntaje Obtenido	 
+
+Scanner	 	 	 
+Parseo archivos correctos (Balance General)	            3	3	 
+Manejo de bloques y generación continua	                2	2	 
+Manejo de tipos (declaración, asignación)	            4	4	 
+Manejo de arreglos (declaración, asignación)	        1	1	 
+Manejo de expresiones binarias (cadena)	                4	4	 
+Manejo de expresiones unarias (cadena)	                2	2	 
+Manejo de expresiones relacionales	                    3	3	 
+Manejo de expresiones lógicas	                        3	3	 
+Manejo estructuras de control	                        5	5	 
+Print y read	                                        2	2	 
+Funciones	                                            4	4	 
+Main	                                                1	1	 
+Comentarios	                                            1	1	 
+b Manejo de errores léxicos	                            2	2	 
+-------------------------------------------------------------------------------
+Parser	 	 	 
+Reconocimiento archivos correctos (Balance General)	    3	3	 
+Manejo de bloques y generación continua	                2	2	 
+Manejo de tipos (declaración, asignación)	            5	5 Listo.	fraccionario con //, ajustado
+Manejo de arreglos (declaración, asignación)	        2	2	 
+Manejo de expresiones binarias (cadena)	                4	4	 
+Manejo de expresiones unarias (cadena)	                2	2	 
+Manejo de expresiones relacionales	                    3.5	3	Listo . equal y notequal deben funcionar con expresion booleana en general (id,literal,funcion,opRelacional)
+Manejo de expresiones lógicas	                        3	3	 
+Manejo estructuras de control	                        5.5	5.5	 
+Print y read	                                        2	1.5	Listo en teoria. cout una sola salida y da error con literal string
+Funciones	                                            3	3	 
+Main	                                                1	1	 
+Comentarios	                                            0.5	0.5	 
+b Manejo de errores sintácticos	                        2.5	2	no reporta columna, es importante
+Información table de símbolos	                        6	4	no se aprecia jerarquía de tablas
+ 	 	 	 
+Ítem No Funcionales	                                Puntos	Puntaje Obtenido		 
+Documentación Interna	                                2	2	 
+Documentación Externa (Bitácora)	                    6	6	 
+Revisión (Estado y Gestión del Tiempo)	                5	4.5	no se aprecia gestión del tiempo
+Hora Entrega	                                        5	5	 
