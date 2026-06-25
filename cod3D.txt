@@ -1,13 +1,68 @@
+func1:
+prepareStack 4
+param_char_x22
+param_char_x23
+data_int_array__x50_
+t1 = 4
+t2 = 5
+_x50_: .space 8
+arr_store _x50_, 0, 0, t1
+arr_store _x50_, 0, 1, t2
+t3 = 0
+t4 = 1
+t5 = t3 * t4
+t6 = 1
+t7 = 0
+t8 = t6 + t7
+t9 = -9999
+arr_store _x50_, t5, t8, t9
+print_string Hola mundo
+t10 = -5.6
+clearStack 4
+return = t10
+goto func1_end
+clearStack 4
+func1_end:
+_func2_:
+prepareStack 4
+param_float__b1_
+param_int__i1_
+data_int_j
+j = 0
+clearStack 4
+return = _i1_
+goto _func2__end
+clearStack 4
+_func2__end:
 __main__:
-prepareStack 8
-data_int_x
-t1 = 5
-x = t1
-data_int_iyn1
-t2 = 10
-t3 = t2 + x
-iyn1 = t3
-data_string_micadena
-micadena = Hola
-clearStack 8
+prepareStack 14
+data_char_miChar
+miChar = !
+data_string_str1
+str1 = Mi string~1
+data_float_fl1
+t11 = 56.6
+fl1 = t11
+data_int_in1
+t12 = 10
+in1 = t12
+data_bool_bl0
+t13 = 6.7
+t14 = 8.9
+if t13 != t14 goto L0
+goto L1
+L0:
+t15 = 1
+goto L2
+L1:
+t15 = 0
+L2:
+bl0 = t15
+data_int_array__x50_
+t16 = 4
+t17 = 5
+_x50_: .space 8
+arr_store _x50_, 0, 0, t16
+arr_store _x50_, 0, 1, t17
+clearStack 14
 __main___end:

@@ -80,9 +80,7 @@ public class mipsGenerator {
                     // Es una etiqueta, la agregamos al segmento .text
                     if (partes[0].endsWith(":")){
                         agregarText(partes[0]);
-                    } 
-                    // Tambien declaracion de una variable como data_int_in1
-                    if (partes[0].length() >= 4 && partes[0].substring(0,4).equals("data")){
+                    } else if (partes[0].length() >= 4 && partes[0].substring(0,4).equals("data")){
                         // Ejemplo: manejar declaraciones que comienzan con "data"
                         // Aca verdaderamente tendra que ser agregado al stack pointer.
                         if (partes[0].substring(5,9).equals("char")){
@@ -106,6 +104,8 @@ public class mipsGenerator {
                         }
                             
                         //imprimirOffsets();
+                    } else if ((partes[0].length() >= 5 && partes[0].substring(0,5).equals("param"))){
+
                     }
                 } else if (partes.length == 2){ // Instruccion con un solo operando, como prepareStack o clearStack, tambien goto's
                     if (partes[0].equals("prepareStack")){
@@ -120,14 +120,16 @@ public class mipsGenerator {
                         
                     } else if (partes[0].equals("goto")){
                         agregarText("j " + partes[1]);
-                    } 
+                    } else if (partes[0].equals("print")){
+
+                    } else if (partes[0].equals("print_string")){
+                        
+                    }
                 } else if (partes.length == 3){ // Instrucciones de asignacion.
-                    if (partes[0].length() == 2){
-                        if (partes[0].contains("t") && partes[1].equals("=")){
+                    if (partes[0].contains("t") && !partes[0].equals("return") && partes[1].equals("=") && !(getTabla().existeEnHistorial(partes[0]))){
                             // Instruccion de asignacion, se traduce a MIPS.
                             agregarText("li $" + partes[0] + ", " + partes[2]); // Aca tengo que arreglar ya que no existe t30 en mips, pero bueno, es un ejemplo de como se traduciria una asignacion de constante a MIPS.
                         
-                        } 
                     } else if (true == (getTabla().existeEnHistorial(partes[0]))){
                         
                         Simbolo s = getTabla().buscarEnHistorial(partes[0]);
@@ -140,15 +142,16 @@ public class mipsGenerator {
                                 agregarText("sw $t0, " + getOffset(partes[0]) + "($sp)");
                             }
                             
-                        }
+                        }       
+                    } else if (partes[0].equals("return")){
 
-                        
-                            
-                    } 
+                    } else if (partes[0].endsWith(":") && partes[1].equals(".space") && !data.toString().contains(partes[1].replace(",", ""))){
+                        agregarData(linea);
+                    }
                    
                    
                 } else if (partes.length == 4){
-
+                    
                 } else if (partes.length == 5){
                     // Por ejemplo load y stores de arreglos, operaciones aritmeticas
                     if (partes[3].equals("+")){
@@ -190,9 +193,29 @@ public class mipsGenerator {
                         }
                         agregarText("div $" + partes[0] + ", $" + partes[2] + ", $" + partes[4]);
 
+                    } else if (partes[0].equals("arrstore")){
+                        int fila = Integer.parseInt(partes[2].replace(",", ""));
+                        int columna = Integer.parseInt(partes[3].replace(",", ""));// Columna a la que se quiere accesar
+                        String nombreArray = partes[1];
+                        int columnas = getTabla().buscarEnHistorial(nombreArray).getColumnas(); // Cantidad de columnas que tiene ya definidas el array.
+                        int posicion = (fila * columnas + columna) * 4;
+                        agregarText("la $tTemporal, " + nombreArray);
+                        agregarText("lw $tTemporal, " + posicion + "(" + "tTemporalArray" + ")"); // Valor que dice posicion de fila   
+                        
                     }
 
                 } else if (partes.length == 6){
+                    if (partes[1].equals("arrload")){
+                        int fila = 0;//Integer.parseInt(partes[4].replace(",", ""));
+                        int columna = 0;//Integer.parseInt(partes[5].replace(",", ""));// Columna a la que se quiere accesar
+                        String nombreArray = partes[3].replace(",", "");
+                        int columnas = getTabla().buscarEnHistorial(nombreArray).getColumnas(); // Cantidad de columnas que tiene ya definidas el array.
+                        int posicion = (fila * columnas + columna) * 4;
+                        agregarText("la $tTemporal, " + nombreArray);
+                        agregarText("sw $tTemporal, " + posicion + "(" + "tTemporalArray" + ")"); // Valor que dice posicion de fila       
+                    
+
+                    }
                     // Condicionales con goto por ejemplo if t3 != t4 goto L0
                 }
 

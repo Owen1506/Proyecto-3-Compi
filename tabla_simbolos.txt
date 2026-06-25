@@ -3,12 +3,33 @@ SCOPE: 0
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-__main__   empty      funcion      1      6     
+func1      float      funcion      1      8     
+_func2_    int        funcion      8      5     
+__main__   empty      funcion      14     7     
 
 SCOPE: 1
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-x          int        variable     2      5     
-iyn1       int        variable     3      5     
-micadena   string     variable     4      8     
+x22        char       parametro    1      22    
+x23        char       parametro    1      31    
+_x50_      int        arreglo      2      5     
+
+SCOPE: 2
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+_b1_       float      parametro    8      23    
+_i1_       int        parametro    8      33    
+j          int        variable     9      5     
+
+SCOPE: 3
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+miChar     char       variable     16     6     
+str1       string     variable     17     8     
+fl1        float      variable     18     7     
+in1        int        variable     19     5     
+bl0        bool       variable     20     6     
+_x50_      int        arreglo      21     5     
