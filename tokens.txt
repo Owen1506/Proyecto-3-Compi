@@ -1,140 +1,98 @@
            LISTA DE TOKENS            
 TOKEN        LEXEMA          LINEA    COL      SCOPE/INFO     
-FLOAT        -               1        2        N/A            
-SEP          -               1        7        N/A            
-ID           func1           1        8        Scope 0        
-PAR_I        -               1        14       N/A            
-CHAR         -               1        17       N/A            
-SEP          -               1        21       N/A            
-ID           x22             1        22       Scope 1        
-COMMA        -               1        25       N/A            
-CHAR         -               1        26       N/A            
-SEP          -               1        30       N/A            
-ID           x23             1        31       Scope 1        
-PAR_D        -               1        35       N/A            
-LLAVE_I      -               1        39       N/A            
-INT          -               2        1        N/A            
-SEP          -               2        4        N/A            
-ID           _x50_           2        5        Scope 3        
-ARR_I        -               2        10       N/A            
-INT_LIT      1               2        12       N/A            
-ARR_D        -               2        13       N/A            
-ARR_I        -               2        15       N/A            
-INT_LIT      2               2        17       N/A            
-ARR_D        -               2        18       N/A            
-ASSIGN       -               2        21       N/A            
-LLAVE_I      -               2        24       N/A            
-LLAVE_I      -               2        26       N/A            
-INT_LIT      4               2        28       N/A            
-COMMA        -               2        29       N/A            
-INT_LIT      5               2        30       N/A            
-LLAVE_D      -               2        31       N/A            
-LLAVE_D      -               2        33       N/A            
-PYC          -               2        35       N/A            
-ID           _x50_           3        1        Scope 3        
-ARR_I        -               3        6        N/A            
-INT_LIT      0               3        8        N/A            
-MULT         -               3        9        N/A            
-INT_LIT      1               3        10       N/A            
-ARR_D        -               3        11       N/A            
-ARR_I        -               3        13       N/A            
-INT_LIT      1               3        15       N/A            
-PLUS         -               3        16       N/A            
-INT_LIT      0               3        17       N/A            
-ARR_D        -               3        18       N/A            
-ASSIGN       -               3        21       N/A            
-INT_LIT      -9999           3        24       N/A            
-PYC          -               3        29       N/A            
+EMPTY        -               1        0        N/A            
+SEP          -               1        6        N/A            
+MAIN         __main__        1        7        Scope 0        
+PAR_I        -               1        16       N/A            
+PAR_D        -               1        19       N/A            
+LLAVE_I      -               1        23       N/A            
+CHAR         -               3        0        N/A            
+SEP          -               3        4        N/A            
+ID           miChar          3        5        Scope 1        
+ASSIGN       -               3        11       N/A            
+CHAR_LIT     !               3        13       N/A            
+PYC          -               3        16       N/A            
 COUT         -               4        1        N/A            
 SEP          -               4        5        N/A            
-PAR_I        -               4        6        N/A            
-STRING_LIT   Hola mundo      4        9        N/A            
-PAR_D        -               4        22       N/A            
-PYC          -               4        25       N/A            
-RETURN       -               5        1        N/A            
-SEP          -               5        7        N/A            
-FLOAT_LIT    -5.6            5        8        N/A            
-PYC          -               5        12       N/A            
-LLAVE_D      -               6        1        N/A            
+PAR_I        -               4        7        N/A            
+ID           miChar          4        10       Scope 1        
+PAR_D        -               4        17       N/A            
+PYC          -               4        19       N/A            
+COUT         -               5        1        N/A            
+SEP          -               5        6        N/A            
+PAR_I        -               5        8        N/A            
+STRING_LIT   \n              5        11       N/A            
+PAR_D        -               5        16       N/A            
+PYC          -               5        18       N/A            
+STRING       -               6        1        N/A            
+SEP          -               6        7        N/A            
+ID           str1            6        8        Scope 1        
+ASSIGN       -               6        12       N/A            
+STRING_LIT   Mi string~1\n   6        14       N/A            
+PYC          -               6        29       N/A            
+COUT         -               7        1        N/A            
+SEP          -               7        5        N/A            
+PAR_I        -               7        7        N/A            
+ID           str1            7        10       Scope 1        
+PAR_D        -               7        15       N/A            
+PYC          -               7        17       N/A            
 INT          -               8        1        N/A            
 SEP          -               8        4        N/A            
-ID           _func2_         8        5        Scope 0        
-PAR_I        -               8        14       N/A            
-FLOAT        -               8        17       N/A            
-SEP          -               8        22       N/A            
-ID           _b1_            8        23       Scope 2        
-COMMA        -               8        27       N/A            
-INT          -               8        29       N/A            
-SEP          -               8        32       N/A            
-ID           _i1_            8        33       Scope 2        
-PAR_D        -               8        38       N/A            
-LLAVE_I      -               8        43       N/A            
-INT          -               9        1        N/A            
-SEP          -               9        4        N/A            
-ID           j               9        5        Scope 2        
-PYC          -               9        7        N/A            
-RETURN       -               10       1        N/A            
-SEP          -               10       7        N/A            
-ID           _i1_            10       8        Scope 2        
-PYC          -               10       12       N/A            
-LLAVE_D      -               11       2        N/A            
-EMPTY        -               14       0        N/A            
-SEP          -               14       6        N/A            
-MAIN         __main__        14       7        Scope 0        
-PAR_I        -               14       16       N/A            
-PAR_D        -               14       19       N/A            
-LLAVE_I      -               14       23       N/A            
-CHAR         -               16       1        N/A            
-SEP          -               16       5        N/A            
-ID           miChar          16       6        Scope 3        
-ASSIGN       -               16       12       N/A            
-CHAR_LIT     !               16       14       N/A            
-PYC          -               16       17       N/A            
-STRING       -               17       1        N/A            
-SEP          -               17       7        N/A            
-ID           str1            17       8        Scope 3        
-ASSIGN       -               17       12       N/A            
-STRING_LIT   Mi string~1     17       14       N/A            
-PYC          -               17       27       N/A            
-FLOAT        -               18       1        N/A            
-SEP          -               18       6        N/A            
-ID           fl1             18       7        Scope 3        
-ASSIGN       -               18       10       N/A            
-FLOAT_LIT    56.6            18       12       N/A            
-PYC          -               18       16       N/A            
-INT          -               19       1        N/A            
-SEP          -               19       4        N/A            
-ID           in1             19       5        Scope 3        
-ASSIGN       -               19       8        N/A            
-INT_LIT      10              19       10       N/A            
-PYC          -               19       12       N/A            
-BOOL         -               20       1        N/A            
-SEP          -               20       5        N/A            
-ID           bl0             20       6        Scope 3        
-ASSIGN       -               20       10       N/A            
-N_EQUAL      -               20       13       N/A            
-PAR_I        -               20       20       N/A            
-FLOAT_LIT    6.7             20       22       N/A            
-COMMA        -               20       25       N/A            
-FLOAT_LIT    8.9             20       26       N/A            
-PAR_D        -               20       29       N/A            
-PYC          -               20       31       N/A            
-INT          -               21       1        N/A            
-SEP          -               21       4        N/A            
-ID           _x50_           21       5        Scope 3        
-ARR_I        -               21       10       N/A            
-INT_LIT      1               21       12       N/A            
-ARR_D        -               21       13       N/A            
-ARR_I        -               21       15       N/A            
-INT_LIT      2               21       17       N/A            
-ARR_D        -               21       18       N/A            
-ASSIGN       -               21       21       N/A            
-LLAVE_I      -               21       24       N/A            
-LLAVE_I      -               21       26       N/A            
-INT_LIT      4               21       28       N/A            
-COMMA        -               21       29       N/A            
-INT_LIT      5               21       30       N/A            
-LLAVE_D      -               21       31       N/A            
-LLAVE_D      -               21       33       N/A            
-PYC          -               21       35       N/A            
-LLAVE_D      -               24       1        N/A            
+ID           in1             8        5        Scope 1        
+ASSIGN       -               8        8        N/A            
+INT_LIT      10              8        10       N/A            
+PYC          -               8        12       N/A            
+COUT         -               9        1        N/A            
+SEP          -               9        5        N/A            
+PAR_I        -               9        6        N/A            
+ID           in1             9        9        Scope 1        
+PAR_D        -               9        13       N/A            
+PYC          -               9        15       N/A            
+COUT         -               10       1        N/A            
+SEP          -               10       6        N/A            
+PAR_I        -               10       8        N/A            
+STRING_LIT   \n              10       11       N/A            
+PAR_D        -               10       16       N/A            
+PYC          -               10       18       N/A            
+BOOL         -               11       1        N/A            
+SEP          -               11       5        N/A            
+ID           bl0             11       6        Scope 1        
+ASSIGN       -               11       10       N/A            
+N_EQUAL      -               11       13       N/A            
+PAR_I        -               11       20       N/A            
+FLOAT_LIT    6.7             11       22       N/A            
+COMMA        -               11       25       N/A            
+FLOAT_LIT    8.9             11       26       N/A            
+PAR_D        -               11       29       N/A            
+PYC          -               11       31       N/A            
+INT          -               12       1        N/A            
+SEP          -               12       4        N/A            
+ID           _x50_           12       5        Scope 1        
+ARR_I        -               12       10       N/A            
+INT_LIT      1               12       12       N/A            
+ARR_D        -               12       13       N/A            
+ARR_I        -               12       15       N/A            
+INT_LIT      2               12       17       N/A            
+ARR_D        -               12       18       N/A            
+ASSIGN       -               12       21       N/A            
+LLAVE_I      -               12       24       N/A            
+LLAVE_I      -               12       26       N/A            
+INT_LIT      4               12       28       N/A            
+COMMA        -               12       29       N/A            
+INT_LIT      5               12       30       N/A            
+LLAVE_D      -               12       31       N/A            
+LLAVE_D      -               12       33       N/A            
+PYC          -               12       35       N/A            
+COUT         -               13       1        N/A            
+SEP          -               13       5        N/A            
+PAR_I        -               13       6        N/A            
+ID           _x50_           13       9        Scope 1        
+ARR_I        -               13       14       N/A            
+INT_LIT      0               13       16       N/A            
+ARR_D        -               13       17       N/A            
+ARR_I        -               13       19       N/A            
+INT_LIT      0               13       21       N/A            
+ARR_D        -               13       22       N/A            
+PAR_D        -               13       25       N/A            
+PYC          -               13       27       N/A            
+LLAVE_D      -               15       1        N/A            

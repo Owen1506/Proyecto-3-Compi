@@ -1,68 +1,38 @@
-func1:
-prepareStack 4
-param_char_x22
-param_char_x23
-data_int_array__x50_
-t1 = 4
-t2 = 5
-_x50_: .space 8
-arr_store _x50_, 0, 0, t1
-arr_store _x50_, 0, 1, t2
-t3 = 0
-t4 = 1
-t5 = t3 * t4
-t6 = 1
-t7 = 0
-t8 = t6 + t7
-t9 = -9999
-arr_store _x50_, t5, t8, t9
-print_string Hola mundo
-t10 = -5.6
-clearStack 4
-return = t10
-goto func1_end
-clearStack 4
-func1_end:
-_func2_:
-prepareStack 4
-param_float__b1_
-param_int__i1_
-data_int_j
-j = 0
-clearStack 4
-return = _i1_
-goto _func2__end
-clearStack 4
-_func2__end:
 __main__:
-prepareStack 14
+prepareStack 10
 data_char_miChar
 miChar = !
+print miChar
+print_string \n
 data_string_str1
-str1 = Mi string~1
-data_float_fl1
-t11 = 56.6
-fl1 = t11
+str1 = Mi string~1\n
+print str1
 data_int_in1
-t12 = 10
-in1 = t12
+t1 = 10
+in1 = t1
+print in1
+print_string \n
 data_bool_bl0
-t13 = 6.7
-t14 = 8.9
-if t13 != t14 goto L0
+t2 = 6.7
+t3 = 8.9
+if t2 != t3 goto L0
 goto L1
 L0:
-t15 = 1
+t4 = 1
 goto L2
 L1:
-t15 = 0
+t4 = 0
 L2:
-bl0 = t15
+bl0 = t4
 data_int_array__x50_
-t16 = 4
-t17 = 5
+t5 = 4
+t6 = 5
 _x50_: .space 8
-arr_store _x50_, 0, 0, t16
-arr_store _x50_, 0, 1, t17
-clearStack 14
+arr_store _x50_, 0, 0, t5
+arr_store _x50_, 0, 1, t6
+t7 = 0
+t8 = 0
+t9 = arr_load _x50_, t7, t8
+print t9
+clearStack 10
 __main___end:

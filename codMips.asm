@@ -1,95 +1,79 @@
 .data
-str1_str: .asciiz "Mi string 1"
+.align 2
+_str_lit_2: .asciiz "\n"
+.align 2
+str1: .asciiz "Mi string~1\n"
+.align 2
+_str_lit_5: .asciiz "\n"
+.align 2
 _x50_: .space 8
 
 .text
 .globl main
+main:
 __main__:
-addi $sp, $sp, -96
+addi $sp, $sp, -12
 li $t0, 33
 sb $t0, 0($sp)
-la $t0, str1_str
-sw $t0, 4($sp)
-li $t0, 1113744998
-mtc1 $t0, $f0
-swc1 $f0, 12($sp)
-lwc1 $f0, 12($sp)
-swc1 $f0, 8($sp)
-li $t0, 10
-sw $t0, 20($sp)
-li $t0, 20
-sw $t0, 24($sp)
-lw $t0, 20($sp)
-lw $t1, 24($sp)
-add $t0, $t0, $t1
-sw $t0, 28($sp)
-li $t0, 30
-sw $t0, 32($sp)
-lw $t0, 28($sp)
-lw $t1, 32($sp)
-add $t0, $t0, $t1
-sw $t0, 36($sp)
-lw $t0, 36($sp)
-sw $t0, 16($sp)
-li $t0, 1087792742
-mtc1 $t0, $f0
-swc1 $f0, 44($sp)
-li $t0, 1091462758
-mtc1 $t0, $f0
-swc1 $f0, 48($sp)
-lwc1 $f0, 44($sp)
-lwc1 $f2, 48($sp)
-c.eq.s $f0, $f2
+lb $t1, 0($sp)
+move $a0, $t1
+li $v0, 11
+syscall
+la $a0, _str_lit_2
+li $v0, 4
+syscall
+la $a0, str1
+li $v0, 4
+syscall
+li $t2, 10
+move $t3, $t2
+sw $t3, 4($sp)
+lw $t4, 4($sp)
+move $a0, $t4
+li $v0, 1
+syscall
+la $a0, _str_lit_5
+li $v0, 4
+syscall
+li.s $f0, 6.7
+mov.s $f1, $f0
+li.s $f2, 8.9
+mov.s $f3, $f2
+c.eq.s $f1, $f3
 bc1f L0
 j L1
 L0:
-li $t0, 1
-sw $t0, 52($sp)
+li $t5, 1
+move $t6, $t5
 j L2
 L1:
-li $t0, 0
-sw $t0, 52($sp)
+li $t7, 0
+move $t6, $t7
 L2:
-lw $t0, 52($sp)
-sw $t0, 40($sp)
-L3:
+sb $t6, 8($sp)
+li $t8, 4
+move $t9, $t8
 li $t0, 5
-sw $t0, 60($sp)
-lw $t0, 60($sp)
-sw $t0, 56($sp)
-li $t0, 1
-sw $t0, 64($sp)
+move $t1, $t0
+la $t2, _x50_
+sw $t9, 0($t2)
+la $t3, _x50_
+sw $t1, 4($t3)
+li $t4, 0
+move $t5, $t4
+li $t7, 0
+move $t6, $t7
+la $t8, _x50_
 li $t0, 0
-sw $t0, 68($sp)
-li $t0, 1
-sw $t0, 72($sp)
-lw $t0, 68($sp)
-li $t1, 0
-beq $t0, $t1, L5
-lw $t0, 72($sp)
-sw $t0, 76($sp)
-j L6
-L5:
-li $t0, 0
-sw $t0, 76($sp)
-L6:
-lw $t0, 64($sp)
-li $t1, 1
-beq $t0, $t1, L7
-lw $t0, 76($sp)
-sw $t0, 80($sp)
-j L8
-L7:
-li $t0, 1
-sw $t0, 80($sp)
-L8:
-lw $t0, 80($sp)
-li $t1, 0
-bne $t0, $t1, L3
-L4:
-li $t0, 4
-sw $t0, 88($sp)
-li $t0, 5
-sw $t0, 92($sp)
-addi $sp, $sp, 96
+mul $t5, $t5, $t0
+add $t5, $t5, $t6
+sll $t5, $t5, 2
+add $t5, $t8, $t5
+lw $t2, 0($t5)
+move $a0, $t2
+li $v0, 1
+syscall
+addi $sp, $sp, 12
 __main___end:
+li $v0, 10
+syscall
