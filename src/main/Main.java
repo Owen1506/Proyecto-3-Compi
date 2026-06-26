@@ -106,7 +106,19 @@ public class Main {
                 gen.generarCodigo();
                 String programaMips = gen.generarPrograma();
                 System.out.println(programaMips);
-                
+                try (PrintWriter out = new PrintWriter(new FileWriter("codMips.asm"))) {
+
+                    if (!hayErroresSemanticos) {
+                        String codigo = programaMips;
+                        out.print(codigo);
+                        System.out.println("Codigo mips guardado en codMips.txt");
+
+                        
+                    } else {
+                        out.println("No se genero codigo 3D debido a errores semanticos en el codigo fuente.");
+                        System.out.println("No se genero codigo 3D debido a errores semanticos.");
+                    }
+                }
                 //gen.getTabla().imprimirHistorial();
                
 
