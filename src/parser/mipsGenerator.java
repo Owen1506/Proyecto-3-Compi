@@ -190,48 +190,9 @@ public class mipsGenerator {
                         }
                         agregarText("div $" + partes[0] + ", $" + partes[2] + ", $" + partes[4]);
 
-                    } else if (partes[0].equals("arrstore")){
-                        int fila = Integer.parseInt(partes[2].replace(",", ""));
-                        int columna = Integer.parseInt(partes[3].replace(",", ""));// Columna a la que se quiere accesar
-                        String nombreArray = partes[1];
-                        int columnas = getTabla().buscarEnHistorial(nombreArray).getColumnas(); // Cantidad de columnas que tiene ya definidas el array.
-                        int posicion = (fila * columnas + columna) * 4;
-                        agregarText("la $t0, " + nombreArray);
-                        agregarText("lw $t0, " + posicion + "(" + "t0" + ")"); // Valor que dice posicion de fila   
-                        
                     }
 
                 } else if (partes.length == 6){
-                    if (partes[1].equals("arrload")){
-                        int fila = 0;//Integer.parseInt(partes[4].replace(",", ""));
-                        int columna = 0;//Integer.parseInt(partes[5].replace(",", ""));// Columna a la que se quiere accesar
-                        String nombreArray = partes[3].replace(",", "");
-                        int columnas = getTabla().buscarEnHistorial(nombreArray).getColumnas(); // Cantidad de columnas que tiene ya definidas el array.
-                        int posicion = (fila * columnas + columna) * 4;
-                        agregarText("la $t0, " + nombreArray);
-                        agregarText("sw $t0, " + posicion + "(" + "t0" + ")"); // Valor que dice posicion de fila       
-                    
-                    // if t83 != t84 goto L42
-                    } else if(partes[0].equals("if")){
-                        if (partes[2].equals("!=")){
-
-                        }else if (partes[2].equals("==")){
-
-                        
-                        }else if (partes[2].equals("<")){
-
-                        
-                        }else if (partes[2].equals(">")){
-
-                        
-                        }else if (partes[2].equals(">=")){
-
-                        
-                        }else if (partes[2].equals("<=")){
-
-                        
-                        }
-                    }
                     // Condicionales con goto por ejemplo if t3 != t4 goto L0
                 }
 
