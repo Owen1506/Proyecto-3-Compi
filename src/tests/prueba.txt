@@ -1,76 +1,173 @@
-int~sumar <| int~a, int~b |> |:
-    cout~<| "Entrando a sumar\n" |>!
-    return~a + b!
+float~func1 <| char~x22,char~x23 |> |:
+
+    cout~<| "=== Entrando a func1 ===\n" |>!
+
+    string~sss<-"Hola"!
+	string~apa!
+	apa<- sss!
+    int~numero<-20 + 5!
+    int~g!
+    char~letra<-'a'!
+    float~h!
+
+    cout~<| "numero inicial = " |>!
+    cout~<| numero |>!
+    cout~<| "\n" |>!
+
+    g <- ++numero * 4 / 2 ^ 3 % --numero!
+
+    cout~<| "g = " |>!
+    cout~<| g |>!
+    cout~<| "\n" |>!
+
+    h <- 4.0 * 2.0 / 2.0 - 6.0 / 3.0!
+
+    cout~<| "h = " |>!
+    cout~<| h |>!
+    cout~<| "\n" |>!
+
+    float~ff<-1.0!
+
+    char~_miChar_<-'!'!
+
+    int~_x30_<--1!
+
+    bool~_x40_<-False!
+
+    int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
+
+    _x50_<<0*1>><<1+0>> <- 99!
+
+    float~_x502_<<2>><<2>> <- |:|:1.5,2.5:|,|:3.5,4.5:|:|!
+
+    cout~<| "Valor matriz int = " |>!
+    cout~<| _x50_<<0>><<1>> |>!
+    cout~<| "\n" |>!
+
+    ff <- _x502_<<_x30_+2>><<_x30_ - 2>> * 2.0 !
+
+    cout~<| "ff = " |>!
+    cout~<| ff |>!
+    cout~<| "\n" |>!
+
+    string~_x503_<-"Hola compilador\n"!
+
+    cout~<| _x503_ |>!
+
+    if~ <| less_te<|numero,30|> @ less_t<|ff,5.0|> # _x40_ @ equal<|False,False|> # n_equal<|False,True|> |> |:
+
+        cout~<| "IF verdadero\n" |>!
+
+        int~y1!
+
+        if~ <| $<|greather_t<|ff,5.0|>#greather_t<|numero,30|>|> |> |:
+
+            cout~<| "IF interno verdadero\n" |>!
+
+            int~y!
+
+            char~ch33<-'a'!
+
+        :|
+
+        else~ |:
+
+            cout~<| "IF interno falso\n" |>!
+
+        :|
+
+    :|
+
+    else~ |:
+
+        cout~<| "ELSE\n" |>!
+
+        int~y2<-45!
+
+        string~str2<-"switch\n"!
+
+        do~ |:
+
+            cout~<| "Iteracion do\n" |>!
+
+            switch~<|y2|> |:
+
+                case~45:
+
+                    cout~<| "CASE 45\n" |>!
+
+                    cout~<| g |>!
+
+                    cout~<| "\n" |>!
+
+                    g<-200!
+
+                    break!
+
+                case~777:
+
+                    cout~<| "CASE 777\n" |>!
+
+                default~:
+
+                    cout~<| "DEFAULT\n" |>!
+
+            :|
+
+        :| while~<|False|>!
+
+    :|
+
+    cout~<| "=== Saliendo func1 ===\n" |>!
+
+    return~1.5!
+
 :|
 
-int~restar <| int~a, int~b |> |:
-    cout~<| "Entrando a restar\n" |>!
-    return~a - b!
+int~_func2_ <| float~_b1_, int~_i1_ |> |:
+
+    cout~<| "Entrando a func2\n" |>!
+
+    cout~<| _i1_ |>!
+
+    cout~<| "\n" |>!
+
+    return~_i1_!
+
 :|
 
-int~multiplicar <| int~a, int~b |> |:
-    cout~<| "Entrando a multiplicar\n" |>!
-    return~a * b!
-:|
+bool~_func3_ <| |> |:
 
-float~promedio <| float~a, float~b |> |:
-    cout~<| "Entrando a promedio\n" |>!
-    float~dos<-2.0!
-    return~a + b / dos!
-:|
+    cout~<| "Entrando a func3\n" |>!
 
-char~siguiente <| char~c |> |:
-    cout~<| "Entrando a siguiente\n" |>!
-    return~c !
+    return~True!
+
 :|
 
 empty~__main__ <| |> |:
 
-    int~a<-10!
-    int~b<-5!
-    int~r!
+    cout~<| "===== MAIN =====\n" |>!
 
-    float~x<-8.0!
-    float~y<-4.0!
-    float~f!
+    char~miChar<-'!'!
 
-    char~c<-'A'!
-    char~d!
+    string~str1<-"Mi string 1\n"!
 
-    cout~<| "==========\n" |>!
+    float~fl1<-5.5!
 
-    r <- sumar<|a,b|>!
-    cout~<| r |>!
-    cout~<| "\n" |>!
+    int~in1<-10!
 
-    r <- restar<|r,2|>!
-    cout~<| r |>!
-    cout~<| "\n" |>!
+    bool~bl0<-n_equal<|6.0,8.0|>!
 
-    r <- multiplicar<|r,3|>!
-    cout~<| r |>!
-    cout~<| "\n" |>!
+    int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
 
-    f <- promedio<|x,y|>!
-    cout~<| f |>!
-    cout~<| "\n" |>!
+    cout~<| "Llamando func1\n" |>!
 
-    d <- siguiente<|c|>!
-    cout~<| d |>!
-    cout~<| "\n" |>!
+    in1 <- _func2_<|func1<|miChar,'e'|>*2.0,in1/_x50_<<0>><<0>>|>!
 
-    cout~<| "Llamadas anidadas enteras\n" |>!
+    cout~<| "Resultado final = " |>!
 
-    r <- multiplicar<| sumar<|2,3|>, restar<|8,4|> |>!
-    cout~<| r |>!
-    cout~<| "\n" |>!
+    cout~<| in1 |>!
 
-    cout~<| "Llamadas anidadas flotantes\n" |>!
-
-    f <- promedio<| promedio<|8.0,4.0|>, promedio<|10.0,2.0|> |>!
-    cout~<| f |>!
-    cout~<| "\n" |>!
-
-    cout~<| "==========\n" |>!
+    cout~<| "\n===== FIN =====\n" |>!
 
 :|

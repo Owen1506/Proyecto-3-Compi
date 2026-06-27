@@ -1,372 +1,650 @@
            LISTA DE TOKENS            
 TOKEN        LEXEMA          LINEA    COL      SCOPE/INFO     
-INT          -               1        0        N/A            
-SEP          -               1        3        N/A            
-ID           sumar           1        4        Scope 0        
-PAR_I        -               1        10       N/A            
-INT          -               1        13       N/A            
-SEP          -               1        16       N/A            
-ID           a               1        17       Scope 6        
-COMMA        -               1        18       N/A            
-INT          -               1        20       N/A            
-SEP          -               1        23       N/A            
-ID           b               1        24       Scope 6        
-PAR_D        -               1        26       N/A            
-LLAVE_I      -               1        29       N/A            
-COUT         -               2        4        N/A            
-SEP          -               2        8        N/A            
-PAR_I        -               2        9        N/A            
-STRING_LIT   Entrando a sumar\n 2        12       N/A            
-PAR_D        -               2        33       N/A            
-PYC          -               2        35       N/A            
-RETURN       -               3        4        N/A            
-SEP          -               3        10       N/A            
-ID           a               3        11       Scope 6        
-PLUS         -               3        13       N/A            
-ID           b               3        15       Scope 6        
-PYC          -               3        16       N/A            
-LLAVE_D      -               4        0        N/A            
-INT          -               6        0        N/A            
-SEP          -               6        3        N/A            
-ID           restar          6        4        Scope 0        
-PAR_I        -               6        11       N/A            
-INT          -               6        14       N/A            
-SEP          -               6        17       N/A            
-ID           a               6        18       Scope 6        
-COMMA        -               6        19       N/A            
-INT          -               6        21       N/A            
-SEP          -               6        24       N/A            
-ID           b               6        25       Scope 6        
-PAR_D        -               6        27       N/A            
-LLAVE_I      -               6        30       N/A            
-COUT         -               7        4        N/A            
-SEP          -               7        8        N/A            
-PAR_I        -               7        9        N/A            
-STRING_LIT   Entrando a restar\n 7        12       N/A            
-PAR_D        -               7        34       N/A            
-PYC          -               7        36       N/A            
-RETURN       -               8        4        N/A            
-SEP          -               8        10       N/A            
-ID           a               8        11       Scope 6        
-MINUS        -               8        13       N/A            
-ID           b               8        15       Scope 6        
-PYC          -               8        16       N/A            
-LLAVE_D      -               9        0        N/A            
-INT          -               11       0        N/A            
-SEP          -               11       3        N/A            
-ID           multiplicar     11       4        Scope 0        
-PAR_I        -               11       16       N/A            
-INT          -               11       19       N/A            
-SEP          -               11       22       N/A            
-ID           a               11       23       Scope 6        
-COMMA        -               11       24       N/A            
-INT          -               11       26       N/A            
-SEP          -               11       29       N/A            
-ID           b               11       30       Scope 6        
-PAR_D        -               11       32       N/A            
-LLAVE_I      -               11       35       N/A            
-COUT         -               12       4        N/A            
-SEP          -               12       8        N/A            
-PAR_I        -               12       9        N/A            
-STRING_LIT   Entrando a multiplicar\n 12       12       N/A            
-PAR_D        -               12       39       N/A            
-PYC          -               12       41       N/A            
-RETURN       -               13       4        N/A            
-SEP          -               13       10       N/A            
-ID           a               13       11       Scope 6        
-MULT         -               13       13       N/A            
-ID           b               13       15       Scope 6        
-PYC          -               13       16       N/A            
-LLAVE_D      -               14       0        N/A            
-FLOAT        -               16       0        N/A            
-SEP          -               16       5        N/A            
-ID           promedio        16       6        Scope 0        
-PAR_I        -               16       15       N/A            
-FLOAT        -               16       18       N/A            
-SEP          -               16       23       N/A            
-ID           a               16       24       Scope 6        
-COMMA        -               16       25       N/A            
-FLOAT        -               16       27       N/A            
-SEP          -               16       32       N/A            
-ID           b               16       33       Scope 6        
-PAR_D        -               16       35       N/A            
-LLAVE_I      -               16       38       N/A            
-COUT         -               17       4        N/A            
-SEP          -               17       8        N/A            
-PAR_I        -               17       9        N/A            
-STRING_LIT   Entrando a promedio\n 17       12       N/A            
-PAR_D        -               17       36       N/A            
-PYC          -               17       38       N/A            
-FLOAT        -               18       4        N/A            
-SEP          -               18       9        N/A            
-ID           dos             18       10       Scope 4        
-ASSIGN       -               18       13       N/A            
-FLOAT_LIT    2.0             18       15       N/A            
-PYC          -               18       18       N/A            
-RETURN       -               19       4        N/A            
-SEP          -               19       10       N/A            
-ID           a               19       11       Scope 6        
-PLUS         -               19       13       N/A            
-ID           b               19       15       Scope 6        
-DIV          -               19       17       N/A            
-ID           dos             19       19       Scope 4        
-PYC          -               19       22       N/A            
-LLAVE_D      -               20       0        N/A            
-CHAR         -               22       0        N/A            
-SEP          -               22       4        N/A            
-ID           siguiente       22       5        Scope 0        
-PAR_I        -               22       15       N/A            
-CHAR         -               22       18       N/A            
-SEP          -               22       22       N/A            
-ID           c               22       23       Scope 6        
-PAR_D        -               22       25       N/A            
-LLAVE_I      -               22       28       N/A            
-COUT         -               23       4        N/A            
-SEP          -               23       8        N/A            
-PAR_I        -               23       9        N/A            
-STRING_LIT   Entrando a siguiente\n 23       12       N/A            
-PAR_D        -               23       37       N/A            
-PYC          -               23       39       N/A            
-RETURN       -               24       4        N/A            
-SEP          -               24       10       N/A            
-ID           c               24       11       Scope 6        
-PYC          -               24       13       N/A            
-LLAVE_D      -               25       0        N/A            
-EMPTY        -               27       0        N/A            
-SEP          -               27       5        N/A            
-MAIN         __main__        27       6        Scope 0        
-PAR_I        -               27       15       N/A            
-PAR_D        -               27       18       N/A            
-LLAVE_I      -               27       21       N/A            
-INT          -               29       4        N/A            
-SEP          -               29       7        N/A            
-ID           a               29       8        Scope 6        
-ASSIGN       -               29       9        N/A            
-INT_LIT      10              29       11       N/A            
-PYC          -               29       13       N/A            
-INT          -               30       4        N/A            
-SEP          -               30       7        N/A            
-ID           b               30       8        Scope 6        
-ASSIGN       -               30       9        N/A            
-INT_LIT      5               30       11       N/A            
-PYC          -               30       12       N/A            
-INT          -               31       4        N/A            
-SEP          -               31       7        N/A            
-ID           r               31       8        Scope 6        
-PYC          -               31       9        N/A            
-FLOAT        -               33       4        N/A            
-SEP          -               33       9        N/A            
-ID           x               33       10       Scope 6        
-ASSIGN       -               33       11       N/A            
-FLOAT_LIT    8.0             33       13       N/A            
-PYC          -               33       16       N/A            
-FLOAT        -               34       4        N/A            
-SEP          -               34       9        N/A            
-ID           y               34       10       Scope 6        
-ASSIGN       -               34       11       N/A            
-FLOAT_LIT    4.0             34       13       N/A            
-PYC          -               34       16       N/A            
-FLOAT        -               35       4        N/A            
-SEP          -               35       9        N/A            
-ID           f               35       10       Scope 6        
-PYC          -               35       11       N/A            
-CHAR         -               37       4        N/A            
-SEP          -               37       8        N/A            
-ID           c               37       9        Scope 6        
-ASSIGN       -               37       10       N/A            
-CHAR_LIT     A               37       12       N/A            
-PYC          -               37       15       N/A            
-CHAR         -               38       4        N/A            
-SEP          -               38       8        N/A            
-ID           d               38       9        Scope 6        
-PYC          -               38       10       N/A            
-COUT         -               40       4        N/A            
-SEP          -               40       8        N/A            
-PAR_I        -               40       9        N/A            
-STRING_LIT   ==========\n    40       12       N/A            
-PAR_D        -               40       27       N/A            
-PYC          -               40       29       N/A            
-ID           r               42       4        Scope 6        
-ASSIGN       -               42       6        N/A            
-ID           sumar           42       9        Scope 0        
-PAR_I        -               42       14       N/A            
-ID           a               42       16       Scope 6        
-COMMA        -               42       17       N/A            
-ID           b               42       18       Scope 6        
-PAR_D        -               42       19       N/A            
-PYC          -               42       21       N/A            
+FLOAT        -               1        0        N/A            
+SEP          -               1        5        N/A            
+ID           func1           1        6        Scope 0        
+PAR_I        -               1        12       N/A            
+CHAR         -               1        15       N/A            
+SEP          -               1        19       N/A            
+ID           x22             1        20       Scope 1        
+COMMA        -               1        23       N/A            
+CHAR         -               1        24       N/A            
+SEP          -               1        28       N/A            
+ID           x23             1        29       Scope 1        
+PAR_D        -               1        33       N/A            
+LLAVE_I      -               1        36       N/A            
+COUT         -               3        4        N/A            
+SEP          -               3        8        N/A            
+PAR_I        -               3        9        N/A            
+STRING_LIT   === Entrando a func1 ===\n 3        12       N/A            
+PAR_D        -               3        41       N/A            
+PYC          -               3        43       N/A            
+STRING       -               5        4        N/A            
+SEP          -               5        10       N/A            
+ID           sss             5        11       Scope 1        
+ASSIGN       -               5        14       N/A            
+STRING_LIT   Hola            5        16       N/A            
+PYC          -               5        22       N/A            
+STRING       -               6        1        N/A            
+SEP          -               6        7        N/A            
+ID           apa             6        8        Scope 1        
+PYC          -               6        11       N/A            
+ID           apa             7        1        Scope 1        
+ASSIGN       -               7        4        N/A            
+ID           sss             7        7        Scope 1        
+PYC          -               7        10       N/A            
+INT          -               8        4        N/A            
+SEP          -               8        7        N/A            
+ID           numero          8        8        Scope 1        
+ASSIGN       -               8        14       N/A            
+INT_LIT      20              8        16       N/A            
+PLUS         -               8        19       N/A            
+INT_LIT      5               8        21       N/A            
+PYC          -               8        22       N/A            
+INT          -               9        4        N/A            
+SEP          -               9        7        N/A            
+ID           g               9        8        Scope 1        
+PYC          -               9        9        N/A            
+CHAR         -               10       4        N/A            
+SEP          -               10       8        N/A            
+ID           letra           10       9        Scope 1        
+ASSIGN       -               10       14       N/A            
+CHAR_LIT     a               10       16       N/A            
+PYC          -               10       19       N/A            
+FLOAT        -               11       4        N/A            
+SEP          -               11       9        N/A            
+ID           h               11       10       Scope 1        
+PYC          -               11       11       N/A            
+COUT         -               13       4        N/A            
+SEP          -               13       8        N/A            
+PAR_I        -               13       9        N/A            
+STRING_LIT   numero inicial =  13       12       N/A            
+PAR_D        -               13       32       N/A            
+PYC          -               13       34       N/A            
+COUT         -               14       4        N/A            
+SEP          -               14       8        N/A            
+PAR_I        -               14       9        N/A            
+ID           numero          14       12       Scope 1        
+PAR_D        -               14       19       N/A            
+PYC          -               14       21       N/A            
+COUT         -               15       4        N/A            
+SEP          -               15       8        N/A            
+PAR_I        -               15       9        N/A            
+STRING_LIT   \n              15       12       N/A            
+PAR_D        -               15       17       N/A            
+PYC          -               15       19       N/A            
+ID           g               17       4        Scope 1        
+ASSIGN       -               17       6        N/A            
+INC          -               17       9        N/A            
+ID           numero          17       11       Scope 1        
+MULT         -               17       18       N/A            
+INT_LIT      4               17       20       N/A            
+DIV          -               17       22       N/A            
+INT_LIT      2               17       24       N/A            
+POW          -               17       26       N/A            
+INT_LIT      3               17       28       N/A            
+MOD          -               17       30       N/A            
+DEC          -               17       32       N/A            
+ID           numero          17       34       Scope 1        
+PYC          -               17       40       N/A            
+COUT         -               19       4        N/A            
+SEP          -               19       8        N/A            
+PAR_I        -               19       9        N/A            
+STRING_LIT   g =             19       12       N/A            
+PAR_D        -               19       19       N/A            
+PYC          -               19       21       N/A            
+COUT         -               20       4        N/A            
+SEP          -               20       8        N/A            
+PAR_I        -               20       9        N/A            
+ID           g               20       12       Scope 1        
+PAR_D        -               20       14       N/A            
+PYC          -               20       16       N/A            
+COUT         -               21       4        N/A            
+SEP          -               21       8        N/A            
+PAR_I        -               21       9        N/A            
+STRING_LIT   \n              21       12       N/A            
+PAR_D        -               21       17       N/A            
+PYC          -               21       19       N/A            
+ID           h               23       4        Scope 1        
+ASSIGN       -               23       6        N/A            
+FLOAT_LIT    4.0             23       9        N/A            
+MULT         -               23       13       N/A            
+FLOAT_LIT    2.0             23       15       N/A            
+DIV          -               23       19       N/A            
+FLOAT_LIT    2.0             23       21       N/A            
+MINUS        -               23       25       N/A            
+FLOAT_LIT    6.0             23       27       N/A            
+DIV          -               23       31       N/A            
+FLOAT_LIT    3.0             23       33       N/A            
+PYC          -               23       36       N/A            
+COUT         -               25       4        N/A            
+SEP          -               25       8        N/A            
+PAR_I        -               25       9        N/A            
+STRING_LIT   h =             25       12       N/A            
+PAR_D        -               25       19       N/A            
+PYC          -               25       21       N/A            
+COUT         -               26       4        N/A            
+SEP          -               26       8        N/A            
+PAR_I        -               26       9        N/A            
+ID           h               26       12       Scope 1        
+PAR_D        -               26       14       N/A            
+PYC          -               26       16       N/A            
+COUT         -               27       4        N/A            
+SEP          -               27       8        N/A            
+PAR_I        -               27       9        N/A            
+STRING_LIT   \n              27       12       N/A            
+PAR_D        -               27       17       N/A            
+PYC          -               27       19       N/A            
+FLOAT        -               29       4        N/A            
+SEP          -               29       9        N/A            
+ID           ff              29       10       Scope 1        
+ASSIGN       -               29       12       N/A            
+FLOAT_LIT    1.0             29       14       N/A            
+PYC          -               29       17       N/A            
+CHAR         -               31       4        N/A            
+SEP          -               31       8        N/A            
+ID           _miChar_        31       9        Scope 1        
+ASSIGN       -               31       17       N/A            
+CHAR_LIT     !               31       19       N/A            
+PYC          -               31       22       N/A            
+INT          -               33       4        N/A            
+SEP          -               33       7        N/A            
+ID           _x30_           33       8        Scope 1        
+ASSIGN       -               33       13       N/A            
+INT_LIT      -1              33       15       N/A            
+PYC          -               33       17       N/A            
+BOOL         -               35       4        N/A            
+SEP          -               35       8        N/A            
+ID           _x40_           35       9        Scope 1        
+ASSIGN       -               35       14       N/A            
+FALSE        -               35       16       N/A            
+PYC          -               35       21       N/A            
+INT          -               37       4        N/A            
+SEP          -               37       7        N/A            
+ID           _x50_           37       8        Scope 9        
+ARR_I        -               37       13       N/A            
+INT_LIT      1               37       15       N/A            
+ARR_D        -               37       16       N/A            
+ARR_I        -               37       18       N/A            
+INT_LIT      2               37       20       N/A            
+ARR_D        -               37       21       N/A            
+ASSIGN       -               37       24       N/A            
+LLAVE_I      -               37       27       N/A            
+LLAVE_I      -               37       29       N/A            
+INT_LIT      4               37       31       N/A            
+COMMA        -               37       32       N/A            
+INT_LIT      5               37       33       N/A            
+LLAVE_D      -               37       34       N/A            
+LLAVE_D      -               37       36       N/A            
+PYC          -               37       38       N/A            
+ID           _x50_           39       4        Scope 9        
+ARR_I        -               39       9        N/A            
+INT_LIT      0               39       11       N/A            
+MULT         -               39       12       N/A            
+INT_LIT      1               39       13       N/A            
+ARR_D        -               39       14       N/A            
+ARR_I        -               39       16       N/A            
+INT_LIT      1               39       18       N/A            
+PLUS         -               39       19       N/A            
+INT_LIT      0               39       20       N/A            
+ARR_D        -               39       21       N/A            
+ASSIGN       -               39       24       N/A            
+INT_LIT      99              39       27       N/A            
+PYC          -               39       29       N/A            
+FLOAT        -               41       4        N/A            
+SEP          -               41       9        N/A            
+ID           _x502_          41       10       Scope 1        
+ARR_I        -               41       16       N/A            
+INT_LIT      2               41       18       N/A            
+ARR_D        -               41       19       N/A            
+ARR_I        -               41       21       N/A            
+INT_LIT      2               41       23       N/A            
+ARR_D        -               41       24       N/A            
+ASSIGN       -               41       27       N/A            
+LLAVE_I      -               41       30       N/A            
+LLAVE_I      -               41       32       N/A            
+FLOAT_LIT    1.5             41       34       N/A            
+COMMA        -               41       37       N/A            
+FLOAT_LIT    2.5             41       38       N/A            
+LLAVE_D      -               41       41       N/A            
+COMMA        -               41       43       N/A            
+LLAVE_I      -               41       44       N/A            
+FLOAT_LIT    3.5             41       46       N/A            
+COMMA        -               41       49       N/A            
+FLOAT_LIT    4.5             41       50       N/A            
+LLAVE_D      -               41       53       N/A            
+LLAVE_D      -               41       55       N/A            
+PYC          -               41       57       N/A            
 COUT         -               43       4        N/A            
 SEP          -               43       8        N/A            
 PAR_I        -               43       9        N/A            
-ID           r               43       12       Scope 6        
-PAR_D        -               43       14       N/A            
-PYC          -               43       16       N/A            
+STRING_LIT   Valor matriz int =  43       12       N/A            
+PAR_D        -               43       34       N/A            
+PYC          -               43       36       N/A            
 COUT         -               44       4        N/A            
 SEP          -               44       8        N/A            
 PAR_I        -               44       9        N/A            
-STRING_LIT   \n              44       12       N/A            
-PAR_D        -               44       17       N/A            
-PYC          -               44       19       N/A            
-ID           r               46       4        Scope 6        
-ASSIGN       -               46       6        N/A            
-ID           restar          46       9        Scope 0        
-PAR_I        -               46       15       N/A            
-ID           r               46       17       Scope 6        
-COMMA        -               46       18       N/A            
-INT_LIT      2               46       19       N/A            
-PAR_D        -               46       20       N/A            
-PYC          -               46       22       N/A            
-COUT         -               47       4        N/A            
-SEP          -               47       8        N/A            
-PAR_I        -               47       9        N/A            
-ID           r               47       12       Scope 6        
-PAR_D        -               47       14       N/A            
-PYC          -               47       16       N/A            
-COUT         -               48       4        N/A            
-SEP          -               48       8        N/A            
-PAR_I        -               48       9        N/A            
-STRING_LIT   \n              48       12       N/A            
-PAR_D        -               48       17       N/A            
-PYC          -               48       19       N/A            
-ID           r               50       4        Scope 6        
-ASSIGN       -               50       6        N/A            
-ID           multiplicar     50       9        Scope 0        
-PAR_I        -               50       20       N/A            
-ID           r               50       22       Scope 6        
-COMMA        -               50       23       N/A            
-INT_LIT      3               50       24       N/A            
-PAR_D        -               50       25       N/A            
-PYC          -               50       27       N/A            
+ID           _x50_           44       12       Scope 9        
+ARR_I        -               44       17       N/A            
+INT_LIT      0               44       19       N/A            
+ARR_D        -               44       20       N/A            
+ARR_I        -               44       22       N/A            
+INT_LIT      1               44       24       N/A            
+ARR_D        -               44       25       N/A            
+PAR_D        -               44       28       N/A            
+PYC          -               44       30       N/A            
+COUT         -               45       4        N/A            
+SEP          -               45       8        N/A            
+PAR_I        -               45       9        N/A            
+STRING_LIT   \n              45       12       N/A            
+PAR_D        -               45       17       N/A            
+PYC          -               45       19       N/A            
+ID           ff              47       4        Scope 1        
+ASSIGN       -               47       7        N/A            
+ID           _x502_          47       10       Scope 1        
+ARR_I        -               47       16       N/A            
+ID           _x30_           47       18       Scope 1        
+PLUS         -               47       23       N/A            
+INT_LIT      2               47       24       N/A            
+ARR_D        -               47       25       N/A            
+ARR_I        -               47       27       N/A            
+ID           _x30_           47       29       Scope 1        
+MINUS        -               47       35       N/A            
+INT_LIT      2               47       37       N/A            
+ARR_D        -               47       38       N/A            
+MULT         -               47       41       N/A            
+FLOAT_LIT    2.0             47       43       N/A            
+PYC          -               47       47       N/A            
+COUT         -               49       4        N/A            
+SEP          -               49       8        N/A            
+PAR_I        -               49       9        N/A            
+STRING_LIT   ff =            49       12       N/A            
+PAR_D        -               49       20       N/A            
+PYC          -               49       22       N/A            
+COUT         -               50       4        N/A            
+SEP          -               50       8        N/A            
+PAR_I        -               50       9        N/A            
+ID           ff              50       12       Scope 1        
+PAR_D        -               50       15       N/A            
+PYC          -               50       17       N/A            
 COUT         -               51       4        N/A            
 SEP          -               51       8        N/A            
 PAR_I        -               51       9        N/A            
-ID           r               51       12       Scope 6        
-PAR_D        -               51       14       N/A            
-PYC          -               51       16       N/A            
-COUT         -               52       4        N/A            
-SEP          -               52       8        N/A            
-PAR_I        -               52       9        N/A            
-STRING_LIT   \n              52       12       N/A            
-PAR_D        -               52       17       N/A            
-PYC          -               52       19       N/A            
-ID           f               54       4        Scope 6        
-ASSIGN       -               54       6        N/A            
-ID           promedio        54       9        Scope 0        
-PAR_I        -               54       17       N/A            
-ID           x               54       19       Scope 6        
-COMMA        -               54       20       N/A            
-ID           y               54       21       Scope 6        
-PAR_D        -               54       22       N/A            
-PYC          -               54       24       N/A            
+STRING_LIT   \n              51       12       N/A            
+PAR_D        -               51       17       N/A            
+PYC          -               51       19       N/A            
+STRING       -               53       4        N/A            
+SEP          -               53       10       N/A            
+ID           _x503_          53       11       Scope 1        
+ASSIGN       -               53       17       N/A            
+STRING_LIT   Hola compilador\n 53       19       N/A            
+PYC          -               53       38       N/A            
 COUT         -               55       4        N/A            
 SEP          -               55       8        N/A            
 PAR_I        -               55       9        N/A            
-ID           f               55       12       Scope 6        
-PAR_D        -               55       14       N/A            
-PYC          -               55       16       N/A            
-COUT         -               56       4        N/A            
-SEP          -               56       8        N/A            
-PAR_I        -               56       9        N/A            
-STRING_LIT   \n              56       12       N/A            
-PAR_D        -               56       17       N/A            
-PYC          -               56       19       N/A            
-ID           d               58       4        Scope 6        
-ASSIGN       -               58       6        N/A            
-ID           siguiente       58       9        Scope 0        
-PAR_I        -               58       18       N/A            
-ID           c               58       20       Scope 6        
-PAR_D        -               58       21       N/A            
-PYC          -               58       23       N/A            
-COUT         -               59       4        N/A            
-SEP          -               59       8        N/A            
-PAR_I        -               59       9        N/A            
-ID           d               59       12       Scope 6        
-PAR_D        -               59       14       N/A            
-PYC          -               59       16       N/A            
-COUT         -               60       4        N/A            
-SEP          -               60       8        N/A            
-PAR_I        -               60       9        N/A            
-STRING_LIT   \n              60       12       N/A            
-PAR_D        -               60       17       N/A            
-PYC          -               60       19       N/A            
-COUT         -               62       4        N/A            
-SEP          -               62       8        N/A            
-PAR_I        -               62       9        N/A            
-STRING_LIT   Llamadas anidadas enteras\n 62       12       N/A            
-PAR_D        -               62       42       N/A            
-PYC          -               62       44       N/A            
-ID           r               64       4        Scope 6        
-ASSIGN       -               64       6        N/A            
-ID           multiplicar     64       9        Scope 0        
-PAR_I        -               64       20       N/A            
-ID           sumar           64       23       Scope 0        
-PAR_I        -               64       28       N/A            
-INT_LIT      2               64       30       N/A            
-COMMA        -               64       31       N/A            
-INT_LIT      3               64       32       N/A            
-PAR_D        -               64       33       N/A            
-COMMA        -               64       35       N/A            
-ID           restar          64       37       Scope 0        
-PAR_I        -               64       43       N/A            
-INT_LIT      8               64       45       N/A            
-COMMA        -               64       46       N/A            
-INT_LIT      4               64       47       N/A            
-PAR_D        -               64       48       N/A            
-PAR_D        -               64       51       N/A            
-PYC          -               64       53       N/A            
-COUT         -               65       4        N/A            
-SEP          -               65       8        N/A            
-PAR_I        -               65       9        N/A            
-ID           r               65       12       Scope 6        
-PAR_D        -               65       14       N/A            
-PYC          -               65       16       N/A            
-COUT         -               66       4        N/A            
-SEP          -               66       8        N/A            
-PAR_I        -               66       9        N/A            
-STRING_LIT   \n              66       12       N/A            
-PAR_D        -               66       17       N/A            
-PYC          -               66       19       N/A            
-COUT         -               68       4        N/A            
-SEP          -               68       8        N/A            
-PAR_I        -               68       9        N/A            
-STRING_LIT   Llamadas anidadas flotantes\n 68       12       N/A            
-PAR_D        -               68       44       N/A            
-PYC          -               68       46       N/A            
-ID           f               70       4        Scope 6        
-ASSIGN       -               70       6        N/A            
-ID           promedio        70       9        Scope 0        
-PAR_I        -               70       17       N/A            
-ID           promedio        70       20       Scope 0        
-PAR_I        -               70       28       N/A            
-FLOAT_LIT    8.0             70       30       N/A            
-COMMA        -               70       33       N/A            
-FLOAT_LIT    4.0             70       34       N/A            
-PAR_D        -               70       37       N/A            
-COMMA        -               70       39       N/A            
-ID           promedio        70       41       Scope 0        
-PAR_I        -               70       49       N/A            
-FLOAT_LIT    10.0            70       51       N/A            
-COMMA        -               70       55       N/A            
-FLOAT_LIT    2.0             70       56       N/A            
-PAR_D        -               70       59       N/A            
-PAR_D        -               70       62       N/A            
-PYC          -               70       64       N/A            
-COUT         -               71       4        N/A            
-SEP          -               71       8        N/A            
-PAR_I        -               71       9        N/A            
-ID           f               71       12       Scope 6        
-PAR_D        -               71       14       N/A            
-PYC          -               71       16       N/A            
-COUT         -               72       4        N/A            
-SEP          -               72       8        N/A            
-PAR_I        -               72       9        N/A            
-STRING_LIT   \n              72       12       N/A            
-PAR_D        -               72       17       N/A            
-PYC          -               72       19       N/A            
-COUT         -               74       4        N/A            
-SEP          -               74       8        N/A            
-PAR_I        -               74       9        N/A            
-STRING_LIT   ==========\n    74       12       N/A            
-PAR_D        -               74       27       N/A            
-PYC          -               74       29       N/A            
-LLAVE_D      -               76       0        N/A            
+ID           _x503_          55       12       Scope 1        
+PAR_D        -               55       19       N/A            
+PYC          -               55       21       N/A            
+IF           -               57       4        N/A            
+SEP          -               57       6        N/A            
+PAR_I        -               57       8        N/A            
+LESS_TE      -               57       11       N/A            
+PAR_I        -               57       18       N/A            
+ID           numero          57       20       Scope 1        
+COMMA        -               57       26       N/A            
+INT_LIT      30              57       27       N/A            
+PAR_D        -               57       29       N/A            
+AND          -               57       32       N/A            
+LESS_T       -               57       34       N/A            
+PAR_I        -               57       40       N/A            
+ID           ff              57       42       Scope 1        
+COMMA        -               57       44       N/A            
+FLOAT_LIT    5.0             57       45       N/A            
+PAR_D        -               57       48       N/A            
+OR           -               57       51       N/A            
+ID           _x40_           57       53       Scope 1        
+AND          -               57       59       N/A            
+EQUAL        -               57       61       N/A            
+PAR_I        -               57       66       N/A            
+FALSE        -               57       68       N/A            
+COMMA        -               57       73       N/A            
+FALSE        -               57       74       N/A            
+PAR_D        -               57       79       N/A            
+OR           -               57       82       N/A            
+N_EQUAL      -               57       84       N/A            
+PAR_I        -               57       91       N/A            
+FALSE        -               57       93       N/A            
+COMMA        -               57       98       N/A            
+TRUE         -               57       99       N/A            
+PAR_D        -               57       103      N/A            
+PAR_D        -               57       106      N/A            
+LLAVE_I      -               57       109      N/A            
+COUT         -               59       8        N/A            
+SEP          -               59       12       N/A            
+PAR_I        -               59       13       N/A            
+STRING_LIT   IF verdadero\n  59       16       N/A            
+PAR_D        -               59       33       N/A            
+PYC          -               59       35       N/A            
+INT          -               61       8        N/A            
+SEP          -               61       11       N/A            
+ID           y1              61       12       Scope 2        
+PYC          -               61       14       N/A            
+IF           -               63       8        N/A            
+SEP          -               63       10       N/A            
+PAR_I        -               63       12       N/A            
+NOT          -               63       15       N/A            
+PAR_I        -               63       16       N/A            
+GREATER_T    -               63       18       N/A            
+PAR_I        -               63       28       N/A            
+ID           ff              63       30       Scope 1        
+COMMA        -               63       32       N/A            
+FLOAT_LIT    5.0             63       33       N/A            
+PAR_D        -               63       36       N/A            
+OR           -               63       38       N/A            
+GREATER_T    -               63       39       N/A            
+PAR_I        -               63       49       N/A            
+ID           numero          63       51       Scope 1        
+COMMA        -               63       57       N/A            
+INT_LIT      30              63       58       N/A            
+PAR_D        -               63       60       N/A            
+PAR_D        -               63       62       N/A            
+PAR_D        -               63       65       N/A            
+LLAVE_I      -               63       68       N/A            
+COUT         -               65       12       N/A            
+SEP          -               65       16       N/A            
+PAR_I        -               65       17       N/A            
+STRING_LIT   IF interno verdadero\n 65       20       N/A            
+PAR_D        -               65       45       N/A            
+PYC          -               65       47       N/A            
+INT          -               67       12       N/A            
+SEP          -               67       15       N/A            
+ID           y               67       16       Scope 3        
+PYC          -               67       17       N/A            
+CHAR         -               69       12       N/A            
+SEP          -               69       16       N/A            
+ID           ch33            69       17       Scope 3        
+ASSIGN       -               69       21       N/A            
+CHAR_LIT     a               69       23       N/A            
+PYC          -               69       26       N/A            
+LLAVE_D      -               71       8        N/A            
+ELSE         -               73       8        N/A            
+SEP          -               73       12       N/A            
+LLAVE_I      -               73       14       N/A            
+COUT         -               75       12       N/A            
+SEP          -               75       16       N/A            
+PAR_I        -               75       17       N/A            
+STRING_LIT   IF interno falso\n 75       20       N/A            
+PAR_D        -               75       41       N/A            
+PYC          -               75       43       N/A            
+LLAVE_D      -               77       8        N/A            
+LLAVE_D      -               79       4        N/A            
+ELSE         -               81       4        N/A            
+SEP          -               81       8        N/A            
+LLAVE_I      -               81       10       N/A            
+COUT         -               83       8        N/A            
+SEP          -               83       12       N/A            
+PAR_I        -               83       13       N/A            
+STRING_LIT   ELSE\n          83       16       N/A            
+PAR_D        -               83       25       N/A            
+PYC          -               83       27       N/A            
+INT          -               85       8        N/A            
+SEP          -               85       11       N/A            
+ID           y2              85       12       Scope 5        
+ASSIGN       -               85       14       N/A            
+INT_LIT      45              85       16       N/A            
+PYC          -               85       18       N/A            
+STRING       -               87       8        N/A            
+SEP          -               87       14       N/A            
+ID           str2            87       15       Scope 5        
+ASSIGN       -               87       19       N/A            
+STRING_LIT   switch\n        87       21       N/A            
+PYC          -               87       31       N/A            
+DO           -               89       8        N/A            
+SEP          -               89       10       N/A            
+LLAVE_I      -               89       12       N/A            
+COUT         -               91       12       N/A            
+SEP          -               91       16       N/A            
+PAR_I        -               91       17       N/A            
+STRING_LIT   Iteracion do\n  91       20       N/A            
+PAR_D        -               91       37       N/A            
+PYC          -               91       39       N/A            
+SWITCH       -               93       12       N/A            
+SEP          -               93       18       N/A            
+PAR_I        -               93       19       N/A            
+ID           y2              93       21       Scope 5        
+PAR_D        -               93       23       N/A            
+LLAVE_I      -               93       26       N/A            
+CASE         -               95       16       N/A            
+SEP          -               95       20       N/A            
+INT_LIT      45              95       21       N/A            
+DOSPUNTOS    -               95       23       N/A            
+COUT         -               97       20       N/A            
+SEP          -               97       24       N/A            
+PAR_I        -               97       25       N/A            
+STRING_LIT   CASE 45\n       97       28       N/A            
+PAR_D        -               97       40       N/A            
+PYC          -               97       42       N/A            
+COUT         -               99       20       N/A            
+SEP          -               99       24       N/A            
+PAR_I        -               99       25       N/A            
+ID           g               99       28       Scope 1        
+PAR_D        -               99       30       N/A            
+PYC          -               99       32       N/A            
+COUT         -               101      20       N/A            
+SEP          -               101      24       N/A            
+PAR_I        -               101      25       N/A            
+STRING_LIT   \n              101      28       N/A            
+PAR_D        -               101      33       N/A            
+PYC          -               101      35       N/A            
+ID           g               103      20       Scope 1        
+ASSIGN       -               103      21       N/A            
+INT_LIT      200             103      23       N/A            
+PYC          -               103      26       N/A            
+BREAK        -               105      20       N/A            
+PYC          -               105      25       N/A            
+CASE         -               107      16       N/A            
+SEP          -               107      20       N/A            
+INT_LIT      777             107      21       N/A            
+DOSPUNTOS    -               107      24       N/A            
+COUT         -               109      20       N/A            
+SEP          -               109      24       N/A            
+PAR_I        -               109      25       N/A            
+STRING_LIT   CASE 777\n      109      28       N/A            
+PAR_D        -               109      41       N/A            
+PYC          -               109      43       N/A            
+DEFAULT      -               111      16       N/A            
+SEP          -               111      23       N/A            
+DOSPUNTOS    -               111      24       N/A            
+COUT         -               113      20       N/A            
+SEP          -               113      24       N/A            
+PAR_I        -               113      25       N/A            
+STRING_LIT   DEFAULT\n       113      28       N/A            
+PAR_D        -               113      40       N/A            
+PYC          -               113      42       N/A            
+LLAVE_D      -               115      12       N/A            
+LLAVE_D      -               117      8        N/A            
+WHILE        -               117      11       N/A            
+SEP          -               117      16       N/A            
+PAR_I        -               117      17       N/A            
+FALSE        -               117      19       N/A            
+PAR_D        -               117      24       N/A            
+PYC          -               117      26       N/A            
+LLAVE_D      -               119      4        N/A            
+COUT         -               121      4        N/A            
+SEP          -               121      8        N/A            
+PAR_I        -               121      9        N/A            
+STRING_LIT   === Saliendo func1 ===\n 121      12       N/A            
+PAR_D        -               121      39       N/A            
+PYC          -               121      41       N/A            
+RETURN       -               123      4        N/A            
+SEP          -               123      10       N/A            
+FLOAT_LIT    1.5             123      11       N/A            
+PYC          -               123      14       N/A            
+LLAVE_D      -               125      0        N/A            
+INT          -               127      0        N/A            
+SEP          -               127      3        N/A            
+ID           _func2_         127      4        Scope 0        
+PAR_I        -               127      12       N/A            
+FLOAT        -               127      15       N/A            
+SEP          -               127      20       N/A            
+ID           _b1_            127      21       Scope 7        
+COMMA        -               127      25       N/A            
+INT          -               127      27       N/A            
+SEP          -               127      30       N/A            
+ID           _i1_            127      31       Scope 7        
+PAR_D        -               127      36       N/A            
+LLAVE_I      -               127      39       N/A            
+COUT         -               129      4        N/A            
+SEP          -               129      8        N/A            
+PAR_I        -               129      9        N/A            
+STRING_LIT   Entrando a func2\n 129      12       N/A            
+PAR_D        -               129      33       N/A            
+PYC          -               129      35       N/A            
+COUT         -               131      4        N/A            
+SEP          -               131      8        N/A            
+PAR_I        -               131      9        N/A            
+ID           _i1_            131      12       Scope 7        
+PAR_D        -               131      17       N/A            
+PYC          -               131      19       N/A            
+COUT         -               133      4        N/A            
+SEP          -               133      8        N/A            
+PAR_I        -               133      9        N/A            
+STRING_LIT   \n              133      12       N/A            
+PAR_D        -               133      17       N/A            
+PYC          -               133      19       N/A            
+RETURN       -               135      4        N/A            
+SEP          -               135      10       N/A            
+ID           _i1_            135      11       Scope 7        
+PYC          -               135      15       N/A            
+LLAVE_D      -               137      0        N/A            
+BOOL         -               139      0        N/A            
+SEP          -               139      4        N/A            
+ID           _func3_         139      5        Scope 0        
+PAR_I        -               139      13       N/A            
+PAR_D        -               139      16       N/A            
+LLAVE_I      -               139      19       N/A            
+COUT         -               141      4        N/A            
+SEP          -               141      8        N/A            
+PAR_I        -               141      9        N/A            
+STRING_LIT   Entrando a func3\n 141      12       N/A            
+PAR_D        -               141      33       N/A            
+PYC          -               141      35       N/A            
+RETURN       -               143      4        N/A            
+SEP          -               143      10       N/A            
+TRUE         -               143      11       N/A            
+PYC          -               143      15       N/A            
+LLAVE_D      -               145      0        N/A            
+EMPTY        -               147      0        N/A            
+SEP          -               147      5        N/A            
+MAIN         __main__        147      6        Scope 0        
+PAR_I        -               147      15       N/A            
+PAR_D        -               147      18       N/A            
+LLAVE_I      -               147      21       N/A            
+COUT         -               149      4        N/A            
+SEP          -               149      8        N/A            
+PAR_I        -               149      9        N/A            
+STRING_LIT   ===== MAIN =====\n 149      12       N/A            
+PAR_D        -               149      33       N/A            
+PYC          -               149      35       N/A            
+CHAR         -               151      4        N/A            
+SEP          -               151      8        N/A            
+ID           miChar          151      9        Scope 9        
+ASSIGN       -               151      15       N/A            
+CHAR_LIT     !               151      17       N/A            
+PYC          -               151      20       N/A            
+STRING       -               153      4        N/A            
+SEP          -               153      10       N/A            
+ID           str1            153      11       Scope 9        
+ASSIGN       -               153      15       N/A            
+STRING_LIT   Mi string 1\n   153      17       N/A            
+PYC          -               153      32       N/A            
+FLOAT        -               155      4        N/A            
+SEP          -               155      9        N/A            
+ID           fl1             155      10       Scope 9        
+ASSIGN       -               155      13       N/A            
+FLOAT_LIT    5.5             155      15       N/A            
+PYC          -               155      18       N/A            
+INT          -               157      4        N/A            
+SEP          -               157      7        N/A            
+ID           in1             157      8        Scope 9        
+ASSIGN       -               157      11       N/A            
+INT_LIT      10              157      13       N/A            
+PYC          -               157      15       N/A            
+BOOL         -               159      4        N/A            
+SEP          -               159      8        N/A            
+ID           bl0             159      9        Scope 9        
+ASSIGN       -               159      12       N/A            
+N_EQUAL      -               159      14       N/A            
+PAR_I        -               159      21       N/A            
+FLOAT_LIT    6.0             159      23       N/A            
+COMMA        -               159      26       N/A            
+FLOAT_LIT    8.0             159      27       N/A            
+PAR_D        -               159      30       N/A            
+PYC          -               159      32       N/A            
+INT          -               161      4        N/A            
+SEP          -               161      7        N/A            
+ID           _x50_           161      8        Scope 9        
+ARR_I        -               161      13       N/A            
+INT_LIT      1               161      15       N/A            
+ARR_D        -               161      16       N/A            
+ARR_I        -               161      18       N/A            
+INT_LIT      2               161      20       N/A            
+ARR_D        -               161      21       N/A            
+ASSIGN       -               161      24       N/A            
+LLAVE_I      -               161      27       N/A            
+LLAVE_I      -               161      29       N/A            
+INT_LIT      4               161      31       N/A            
+COMMA        -               161      32       N/A            
+INT_LIT      5               161      33       N/A            
+LLAVE_D      -               161      34       N/A            
+LLAVE_D      -               161      36       N/A            
+PYC          -               161      38       N/A            
+COUT         -               163      4        N/A            
+SEP          -               163      8        N/A            
+PAR_I        -               163      9        N/A            
+STRING_LIT   Llamando func1\n 163      12       N/A            
+PAR_D        -               163      31       N/A            
+PYC          -               163      33       N/A            
+ID           in1             165      4        Scope 9        
+ASSIGN       -               165      8        N/A            
+ID           _func2_         165      11       Scope 0        
+PAR_I        -               165      18       N/A            
+ID           func1           165      20       Scope 0        
+PAR_I        -               165      25       N/A            
+ID           miChar          165      27       Scope 9        
+COMMA        -               165      33       N/A            
+CHAR_LIT     e               165      34       N/A            
+PAR_D        -               165      37       N/A            
+MULT         -               165      39       N/A            
+FLOAT_LIT    2.0             165      40       N/A            
+COMMA        -               165      43       N/A            
+ID           in1             165      44       Scope 9        
+DIV          -               165      47       N/A            
+ID           _x50_           165      48       Scope 9        
+ARR_I        -               165      53       N/A            
+INT_LIT      0               165      55       N/A            
+ARR_D        -               165      56       N/A            
+ARR_I        -               165      58       N/A            
+INT_LIT      0               165      60       N/A            
+ARR_D        -               165      61       N/A            
+PAR_D        -               165      63       N/A            
+PYC          -               165      65       N/A            
+COUT         -               167      4        N/A            
+SEP          -               167      8        N/A            
+PAR_I        -               167      9        N/A            
+STRING_LIT   Resultado final =  167      12       N/A            
+PAR_D        -               167      33       N/A            
+PYC          -               167      35       N/A            
+COUT         -               169      4        N/A            
+SEP          -               169      8        N/A            
+PAR_I        -               169      9        N/A            
+ID           in1             169      12       Scope 9        
+PAR_D        -               169      16       N/A            
+PYC          -               169      18       N/A            
+COUT         -               171      4        N/A            
+SEP          -               171      8        N/A            
+PAR_I        -               171      9        N/A            
+STRING_LIT   \n===== FIN =====\n 171      12       N/A            
+PAR_D        -               171      34       N/A            
+PYC          -               171      36       N/A            
+LLAVE_D      -               173      0        N/A            

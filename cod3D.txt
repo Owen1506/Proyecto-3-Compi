@@ -1,159 +1,321 @@
-sumar:
+func1:
+prepareStack 44
+param_char_x22
+param_char_x23
+print_string === Entrando a func1 ===\n
+data_string_sss
+sss = Hola
+data_string_apa
+apa = "" 
+apa = sss
+data_int_numero
+t1 = 20
+t2 = 5
+t3 = t1 + t2
+numero = t3
+data_int_g
+g = 0
+data_char_letra
+letra = a
+data_float_h
+h = 0.0
+print_string numero inicial = 
+print numero
+print_string \n
+t4 = numero + 1
+numero = t4
+t5 = 4
+t6 = t4 * t5
+t7 = 2
+t8 = 3
+t9 = t7 ^ t8
+t10 = t6 / t9
+t11 = numero - 1
+numero = t11
+t12 = t10 % t11
+g = t12
+print_string g = 
+print g
+print_string \n
+t13 = 4.0
+t14 = 2.0
+t15 = t13 * t14
+t16 = 2.0
+t17 = t15 / t16
+t18 = 6.0
+t19 = 3.0
+t20 = t18 / t19
+t21 = t17 - t20
+h = t21
+print_string h = 
+print h
+print_string \n
+data_float_ff
+t22 = 1.0
+ff = t22
+data_char__miChar_
+_miChar_ = !
+data_int__x30_
+t23 = -1
+_x30_ = t23
+data_bool__x40_
+t24 = 0
+_x40_ = t24
+data_int_array__x50_
+t25 = 4
+t26 = 5
+_x50_: .space 8
+arr_store _x50_, 0, 0, t25
+arr_store _x50_, 0, 1, t26
+t27 = 0
+t28 = 1
+t29 = t27 * t28
+t30 = 1
+t31 = 0
+t32 = t30 + t31
+t33 = 99
+arr_store _x50_, t29, t32, t33
+data_float_array__x502_
+t34 = 1.5
+t35 = 2.5
+t36 = 3.5
+t37 = 4.5
+_x502_: .space 16
+arr_store _x502_, 0, 0, t34
+arr_store _x502_, 0, 1, t35
+arr_store _x502_, 1, 0, t36
+arr_store _x502_, 1, 1, t37
+print_string Valor matriz int = 
+t38 = 0
+t39 = 1
+t40 = arr_load _x50_, t38, t39
+print t40
+print_string \n
+t41 = 2
+t42 = _x30_ + t41
+t43 = 2
+t44 = _x30_ - t43
+t45 = arr_load _x502_, t42, t44
+t46 = 2.0
+t47 = t45 * t46
+ff = t47
+print_string ff = 
+print ff
+print_string \n
+data_string__x503_
+_x503_ = Hola compilador\n
+print _x503_
+t48 = 30
+if numero <= t48 goto L0
+goto L1
+L0:
+t49 = 1
+goto L2
+L1:
+t49 = 0
+L2:
+t50 = 5.0
+if ff < t50 goto L3
+goto L4
+L3:
+t51 = 1
+goto L5
+L4:
+t51 = 0
+L5:
+if t49 == 0 goto L6
+t52 = t51
+goto L7
+L6:
+t52 = 0
+L7:
+t53 = 0
+t54 = 0
+if t53 == t54 goto L8
+goto L9
+L8:
+t55 = 1
+goto L10
+L9:
+t55 = 0
+L10:
+if _x40_ == 0 goto L11
+t56 = t55
+goto L12
+L11:
+t56 = 0
+L12:
+t57 = 0
+t58 = 1
+if t57 != t58 goto L13
+goto L14
+L13:
+t59 = 1
+goto L15
+L14:
+t59 = 0
+L15:
+if t56 == 1 goto L16
+t60 = t59
+goto L17
+L16:
+t60 = 1
+L17:
+if t52 == 1 goto L18
+t61 = t60
+goto L19
+L18:
+t61 = 1
+L19:
+if t61 == 0 goto L20
+print_string IF verdadero\n
+data_int_y1
+y1 = 0
+t62 = 5.0
+if ff > t62 goto L22
+goto L23
+L22:
+t63 = 1
+goto L24
+L23:
+t63 = 0
+L24:
+t64 = 30
+if numero > t64 goto L25
+goto L26
+L25:
+t65 = 1
+goto L27
+L26:
+t65 = 0
+L27:
+if t63 == 1 goto L28
+t66 = t65
+goto L29
+L28:
+t66 = 1
+L29:
+t67 = 1 - t66
+if t67 == 0 goto L30
+print_string IF interno verdadero\n
+data_int_y
+y = 0
+data_char_ch33
+ch33 = a
+goto L31
+L30:
+print_string IF interno falso\n
+L31:
+goto L21
+L20:
+print_string ELSE\n
+data_int_y2
+t68 = 45
+y2 = t68
+data_string_str2
+str2 = switch\n
+L32:
+print_string Iteracion do\n
+t69 = y2
+t70 = 45
+t72 = 777
+if t69 == t72 goto L37
+if t69 == t70 goto L36
+goto L35
+L36:
+print_string CASE 45\n
+print g
+print_string \n
+t71 = 200
+g = t71
+goto L34
+L37:
+print_string CASE 777\n
+L35:
+print_string DEFAULT\n
+L34:
+t73 = 0
+if t73 != 0 goto L32
+L33:
+L21:
+print_string === Saliendo func1 ===\n
+t74 = 1.5
+clearStack 44
+return = t74
+goto func1_end
+clearStack 44
+func1_end:
+_func2_:
 prepareStack 0
-param_int_a
-param_int_b
-print_string Entrando a sumar\n
-t1 = a + b
+param_float__b1_
+param_int__i1_
+print_string Entrando a func2\n
+print _i1_
+print_string \n
 clearStack 0
-return = t1
-goto sumar_end
+return = _i1_
+goto _func2__end
 clearStack 0
-sumar_end:
-restar:
+_func2__end:
+_func3_:
 prepareStack 0
-param_int_a
-param_int_b
-print_string Entrando a restar\n
-t2 = a - b
+
+print_string Entrando a func3\n
+t75 = 1
 clearStack 0
-return = t2
-goto restar_end
+return = t75
+goto _func3__end
 clearStack 0
-restar_end:
-multiplicar:
-prepareStack 0
-param_int_a
-param_int_b
-print_string Entrando a multiplicar\n
-t3 = a * b
-clearStack 0
-return = t3
-goto multiplicar_end
-clearStack 0
-multiplicar_end:
-promedio:
-prepareStack 4
-param_float_a
-param_float_b
-print_string Entrando a promedio\n
-data_float_dos
-t4 = 2.0
-dos = t4
-t5 = b / dos
-t6 = a + t5
-clearStack 4
-return = t6
-goto promedio_end
-clearStack 4
-promedio_end:
-siguiente:
-prepareStack 0
-param_char_c
-print_string Entrando a siguiente\n
-clearStack 0
-return = c
-goto siguiente_end
-clearStack 0
-siguiente_end:
+_func3__end:
 main:
-prepareStack 26
-data_int_a
-t7 = 10
-a = t7
-data_int_b
-t8 = 5
-b = t8
-data_int_r
-r = 0
-data_float_x
-t9 = 8.0
-x = t9
-data_float_y
-t10 = 4.0
-y = t10
-data_float_f
-f = 0.0
-data_char_c
-c = A
-data_char_d
-d = '0'
-print_string ==========\n
-push a
-push b
-call sumar
-t11 = retval
-r = t11
-print r
-print_string \n
-push r
-t12 = 2
-push t12
-call restar
-t13 = retval
-r = t13
-print r
-print_string \n
-push r
-t14 = 3
-push t14
-call multiplicar
-t15 = retval
-r = t15
-print r
-print_string \n
-push x
-push y
-call promedio
-t16 = retval
-f = t16
-print f
-print_string \n
-push c
-call siguiente
-t17 = retval
-d = t17
-print d
-print_string \n
-print_string Llamadas anidadas enteras\n
-t18 = 2
-push t18
-t19 = 3
-push t19
-call sumar
-t20 = retval
-push t20
-t21 = 8
-push t21
-t22 = 4
-push t22
-call restar
-t23 = retval
-push t23
-call multiplicar
-t24 = retval
-r = t24
-print r
-print_string \n
-print_string Llamadas anidadas flotantes\n
-t25 = 8.0
-push t25
-t26 = 4.0
-push t26
-call promedio
-t27 = retval
-push t27
-t28 = 10.0
-push t28
-t29 = 2.0
-push t29
-call promedio
-t30 = retval
-push t30
-call promedio
-t31 = retval
-f = t31
-print f
-print_string \n
-print_string ==========\n
-clearStack 26
+prepareStack 14
+print_string ===== MAIN =====\n
+data_char_miChar
+miChar = !
+data_string_str1
+str1 = Mi string 1\n
+data_float_fl1
+t76 = 5.5
+fl1 = t76
+data_int_in1
+t77 = 10
+in1 = t77
+data_bool_bl0
+t78 = 6.0
+t79 = 8.0
+if t78 != t79 goto L38
+goto L39
+L38:
+t80 = 1
+goto L40
+L39:
+t80 = 0
+L40:
+bl0 = t80
+data_int_array__x50_
+t81 = 4
+t82 = 5
+_x50_: .space 8
+arr_store _x50_, 0, 0, t81
+arr_store _x50_, 0, 1, t82
+print_string Llamando func1\n
+push miChar
+push e
+call func1
+t83 = retval
+t84 = 2.0
+t85 = t83 * t84
+push t85
+t86 = 0
+t87 = 0
+t88 = arr_load _x50_, t86, t87
+t89 = in1 / t88
+push t89
+call _func2_
+t90 = retval
+in1 = t90
+print_string Resultado final = 
+print in1
+print_string \n===== FIN =====\n
+clearStack 14
 main_end:

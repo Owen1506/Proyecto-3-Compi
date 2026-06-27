@@ -3,57 +3,65 @@ SCOPE: 0
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-sumar      int        funcion      1      4     
-restar     int        funcion      6      4     
-multiplicar int        funcion      11     4     
-promedio   float      funcion      16     6     
-siguiente  char       funcion      22     5     
-__main__   empty      funcion      27     6     
+func1      float      funcion      1      6     
+_func2_    int        funcion      127    4     
+_func3_    bool       funcion      139    5     
+__main__   empty      funcion      147    6     
 
 SCOPE: 1
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-a          int        parametro    1      17    
-b          int        parametro    1      24    
+x22        char       parametro    1      20    
+x23        char       parametro    1      29    
+sss        string     variable     5      11    
+apa        string     variable     6      8     
+numero     int        variable     8      8     
+g          int        variable     9      8     
+letra      char       variable     10     9     
+h          float      variable     11     10    
+ff         float      variable     29     10    
+_miChar_   char       variable     31     9     
+_x30_      int        variable     33     8     
+_x40_      bool       variable     35     9     
+_x50_      int        arreglo      37     8     
+_x502_     float      arreglo      41     10    
+_x503_     string     variable     53     11    
 
 SCOPE: 2
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-a          int        parametro    6      18    
-b          int        parametro    6      25    
+y1         int        variable     61     12    
 
 SCOPE: 3
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-a          int        parametro    11     23    
-b          int        parametro    11     30    
-
-SCOPE: 4
-------------------------------------------------------
-NOMBRE     TIPO       CATEGORIA    LIN    COL   
-------------------------------------------------------
-a          float      parametro    16     24    
-b          float      parametro    16     33    
-dos        float      variable     18     10    
+y          int        variable     67     16    
+ch33       char       variable     69     17    
 
 SCOPE: 5
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-c          char       parametro    22     23    
+y2         int        variable     85     12    
+str2       string     variable     87     15    
 
-SCOPE: 6
+SCOPE: 7
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-a          int        variable     29     8     
-b          int        variable     30     8     
-r          int        variable     31     8     
-x          float      variable     33     10    
-y          float      variable     34     10    
-f          float      variable     35     10    
-c          char       variable     37     9     
-d          char       variable     38     9     
+_b1_       float      parametro    127    21    
+_i1_       int        parametro    127    31    
+
+SCOPE: 9
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+miChar     char       variable     151    9     
+str1       string     variable     153    11    
+fl1        float      variable     155    10    
+in1        int        variable     157    8     
+bl0        bool       variable     159    9     
+_x50_      int        arreglo      161    8     

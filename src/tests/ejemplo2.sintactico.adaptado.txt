@@ -1,64 +1,62 @@
-float~_mi_  <| int~ _dif_, char~ _otra_ |> |:  ¡¡sintactico  |> 
-	int~_otra_!
-	string~_str_<-"Hola $~&¡¡:|$& |>  mundo"!
-	do ~¡¡ puede dar sintactico
-	 |: 
-		do~
-		 |: 
-			_var_ <- _var_ - 1! ¡¡semantico
-		 :| while~ <| 1 @ $ <| <|greather_te<|12 , <| 34+35 |>|>|>  |> |>! ¡¡semantico, ver manejo de parentesis y combinacion
-		if ~ <|4|> 
-		 |: 
-			cout ~<| "entra al if" |> !
-		 :|
-		 else ~ |:  ¡¡****sintactico
-			cin ~<| _var2_ |> !
-			break!
-		 :| 
+int~sumar <| int~a, int~b |> |:
+    cout~<| "Entrando a sumar\n" |>!
+    return~a + b!
+:|
 
-		if ~ <| 5|> 
-		 |: 
-			cout ~<| "entra al if" |> !
-		 :| 
-		if~ <| true |> 
-		 |: 
-			cout ~<| _var_ |> !
-		 :| 
-		else~
-		 |: 
-			switch ~<| _otra_ |>  ¡¡semantico
-			 |: 
-				case~1: 
-					cout~<| "!¡¡" |> !
-				case~'2':
-					_otra_ <- 10!
-					break!
-				default~: ¡¡ sintactico
-					_otra_ <- -10.5 * -1.9!
+int~restar <| int~a, int~b |> |:
+    cout~<| "Entrando a restar\n" |>!
+    return~a - b!
+:|
 
-			 :| 
-			switch ~<| _otra2_ |>  ¡¡semantico
-			 |: 
-				case~10: 
-					cout~ <| "un case" |> !
-			 :| 
-		 :| 
-	 :| while~ <| $ <|false|>  |> !
-	return~1! ¡¡semantico
-  :| 
+int~multiplicar <| int~a, int~b |> |:
+    cout~<| "Entrando a multiplicar\n" |>!
+    return~a * b!
+:|
 
- bool~_miOtraFun_  <|  |>   |: 
-	return~-5.6! ¡¡semantico
-  :| 
+char~siguiente <| char~c |> |:
+    cout~<| "Entrando a siguiente\n" |>!
+    return~c !
+:|
 
- empty~__main__ <|  |>   |: ¡¡ semantico tipo void
-	_arr_<<67+_i_>><<67+_i_>> <- -0.01 + 10e10 * 5 !  ¡¡ semantico
-	bool~_b1_! ¡¡semantico
-	string~_s1_! ¡¡semantico
-	cin~<| _s1_ |> ! ¡¡semantico
-	cout ~<| _b1_ |> ! ¡¡semantico
-	cout ~<| true |> ! ¡¡semantico
-	cout ~<| -6//7 |> !
-	return~f!  ¡¡sintactico
-	return~1+_f_ <|  |> !
- :| 
+empty~__main__ <| |> |:
+
+    int~a<-10!
+    int~b<-5!
+    int~r!
+
+    float~x<-8.0!
+    float~y<-4.0!
+    float~f!
+
+    char~c<-'A'!
+    char~d!
+
+    cout~<| "==========\n" |>!
+
+    r <- sumar<|a,b|>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+    r <- restar<|r,2|>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+    r <- multiplicar<|r,3|>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+
+    d <- siguiente<|c|>!
+    cout~<| d |>!
+    cout~<| "\n" |>!
+
+    cout~<| "Llamadas anidadas enteras\n" |>!
+
+    r <- multiplicar<| sumar<|2,3|>, restar<|8,4|> |>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+
+    cout~<| "==========\n" |>!
+
+:|

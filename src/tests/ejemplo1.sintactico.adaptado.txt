@@ -1,75 +1,172 @@
-  float~func1 <| char~x22,char~x23 |>  |:
-	string~sss<-"Ho l a"!
-	int~numero <- 20 + 21! int~g! char~letra<-'a'! float~h!
-	g <- ++numero * <|10 + 2e4|> / 44 ^ 88 % --numero! 
-	h <- 4.4 * func1 <|letra,'b'|> / 9.9 - 6//7!
-	cout~<| numero |> !
-	float~ff <- 0.01!
-	char~_miChar_<-'!' !
-	int~_x30_<--1!
-	bool~_x40_<-False!
-	int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
-	_x50_<<0*1>><<1+0>> <- -9999!
-	float~_x502_<<2>><<2>> <- |:|:5.5,6.4:|,|:7.7,8.8:|:|!
-	cout~<| "1****" |> !
-	ff <- _x502_<<_x30_ + 2>><<_x30_ - 2>> * func1 <|letra,'c'|>!
-	string~_x503_<-"Hola a todos los que est<<a>> haciendo~un compilador nuevo|:n"!
-	cout~<| _x503_ |> !
-	if~ <| less_te<|numero,45|> @ less_t<|ff,5.6|>  # _x40_ @ equal<|False,False|> # n_equal<|False,True|> |>  |: ¡¡ __relacional__ x4
-		int~y1!
-		cout~<| "2****" |> !
-		if~ <| $ <| greather_t<|ff,5.6|> # greather_t<|numero,45|> |>|>  |: ¡¡ __relacional__ x2
-			int~y!
-			char~ch33<-'a'!
-		:|else~|: :|
-		cout~<| "2****" |> !
-		char~ch33<-'a'!
-	 :|
-	else~ |: 
-		cout~<| "3****" |> !
-		int~y2<-45!
-		string~str2<-"dddfffddd"!
-		do~ |: 
-			cout~<| _x503_ |> !
-			cout~<| "4!!!!!!!!!!!!!!!!!" |> !
-					switch~<|y2|> |: 
-						case~45: 
-							cout~<|g|>! g <- 200000! cout~<|ff|>!
-							break!
-						case~777: 
-							cout~<|ff|>! g <- 211111! cout~<|ff|>!
-						default~:
-							cout~<|g|>! g <- 22222222! cout~<|g|>!
-					:|
-			cout~<| "4!!!!!!!!!!!!!!!!!" |> !
-		
-		:| while~<|True # False @ _x40_|>!
-		cout~<| "3****" |> !
-	 :|
-	
-	cout~<| "Hola mundo" |> !
-	return~-5.6 / ff * func1 <|letra,'d'|>!
- :|  
+float~func1 <| char~x22,char~x23 |> |:
 
- int~_func2_  <| float~_b1_, int~_i1_ |>   |: 
-	int~j ! 
-	return~_i1_!
-  :|  
+    cout~<| "=== Entrando a func1 ===\n" |>!
 
-bool~_func3_  <|  |>   |: 
-	string~_b1_!
-	return~True! 
-  :|
- 
+    string~sss<-"Hola"!
 
-empty ~__main__ <| |>  |: 
+    int~numero<-20 + 5!
+    int~g!
+    char~letra<-'a'!
+    float~h!
 
-	char~miChar<-'!'!
-	string~str1<-"Mi string~1"!
-	float~fl1<-56.6!
-	int~in1<-10!
-	bool~bl0 <- n_equal<|6.7,8.9|>! 
-	int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
-	in1 <- 0 + _func2_ <| func1<|miChar,'e'|> * 5.5 , in1 / _x50_<<0>><<0>> |> + 0 !
+    cout~<| "numero inicial = " |>!
+    cout~<| numero |>!
+    cout~<| "\n" |>!
 
- :| 
+    g <- ++numero * 4 / 2 ^ 3 % --numero!
+
+    cout~<| "g = " |>!
+    cout~<| g |>!
+    cout~<| "\n" |>!
+
+    h <- 4.0 * 2.0 / 2.0 - 6.0 / 3.0!
+
+    cout~<| "h = " |>!
+    cout~<| h |>!
+    cout~<| "\n" |>!
+
+    float~ff<-1.0!
+
+    char~_miChar_<-'!'!
+
+    int~_x30_<--1!
+
+    bool~_x40_<-False!
+
+    int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
+
+    _x50_<<0*1>><<1+0>> <- 99!
+
+    float~_x502_<<2>><<2>> <- |:|:1.5,2.5:|,|:3.5,4.5:|:|!
+
+    cout~<| "Valor matriz int = " |>!
+    cout~<| _x50_<<0>><<1>> |>!
+    cout~<| "\n" |>!
+
+    ff <- _x502_<<_x30_+2>><<_x30_-2>> * 2.0
+
+    cout~<| "ff = " |>!
+    cout~<| ff |>!
+    cout~<| "\n" |>!
+
+    string~_x503_<-"Hola compilador\n"!
+
+    cout~<| _x503_ |>!
+
+    if~ <| less_te<|numero,30|> @ less_t<|ff,5.0|> # _x40_ @ equal<|False,False|> # n_equal<|False,True|> |> |:
+
+        cout~<| "IF verdadero\n" |>!
+
+        int~y1!
+
+        if~ <| $<|greather_t<|ff,5.0|>#greather_t<|numero,30|>|> |> |:
+
+            cout~<| "IF interno verdadero\n" |>!
+
+            int~y!
+
+            char~ch33<-'a'!
+
+        :|
+
+        else~ |:
+
+            cout~<| "IF interno falso\n" |>!
+
+        :|
+
+    :|
+
+    else~ |:
+
+        cout~<| "ELSE\n" |>!
+
+        int~y2<-45!
+
+        string~str2<-"switch\n"!
+
+        do~ |:
+
+            cout~<| "Iteracion do\n" |>!
+
+            switch~<|y2|> |:
+
+                case~45:
+
+                    cout~<| "CASE 45\n" |>!
+
+                    cout~<| g |>!
+
+                    cout~<| "\n" |>!
+
+                    g<-200!
+
+                    break!
+
+                case~777:
+
+                    cout~<| "CASE 777\n" |>!
+
+                default~:
+
+                    cout~<| "DEFAULT\n" |>!
+
+            :|
+
+        :| while~<|False|>!
+
+    :|
+
+    cout~<| "=== Saliendo func1 ===\n" |>!
+
+    return~1.5!
+
+:|
+
+int~_func2_ <| float~_b1_, int~_i1_ |> |:
+
+    cout~<| "Entrando a func2\n" |>!
+
+    cout~<| _i1_ |>!
+
+    cout~<| "\n" |>!
+
+    return~_i1_!
+
+:|
+
+bool~_func3_ <| |> |:
+
+    cout~<| "Entrando a func3\n" |>!
+
+    return~True!
+
+:|
+
+empty~__main__ <| |> |:
+
+    cout~<| "===== MAIN =====\n" |>!
+
+    char~miChar<-'!'!
+
+    string~str1<-"Mi string 1\n"!
+
+    float~fl1<-5.5!
+
+    int~in1<-10!
+
+    bool~bl0<-n_equal<|6.0,8.0|>!
+
+    int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
+
+    cout~<| "Llamando func1\n" |>!
+
+    in1 <- _func2_<|func1<|miChar,'e'|>*2.0,in1/_x50_<<0>><<0>>|>!
+
+    cout~<| "Resultado final = " |>!
+
+    cout~<| in1 |>!
+
+    cout~<| "\n===== FIN =====\n" |>!
+
+:|
