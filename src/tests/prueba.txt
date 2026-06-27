@@ -1,15 +1,76 @@
-empty ~__main__ <| |>  |: 
+int~sumar <| int~a, int~b |> |:
+    cout~<| "Entrando a sumar\n" |>!
+    return~a + b!
+:|
 
-char~miChar<-'!'!
-	cout~ <| miChar |>!
-	cout ~ <| "\n" |>!
-	string~str1<-"Mi string~1\n"!
-	cout~ <| str1 |>!
-	int~in1<-10!
-	cout~<| in1 |>!
-	cout ~ <| "\n" |>!
-	bool~bl0 <- n_equal<|6.7,8.9|>! 
-	int~_x50_<<1>><<2>> <- |:|:4,5:|:|!
-	cout~<| _x50_<<0>><<0>> |>!
+int~restar <| int~a, int~b |> |:
+    cout~<| "Entrando a restar\n" |>!
+    return~a - b!
+:|
 
- :| 
+int~multiplicar <| int~a, int~b |> |:
+    cout~<| "Entrando a multiplicar\n" |>!
+    return~a * b!
+:|
+
+float~promedio <| float~a, float~b |> |:
+    cout~<| "Entrando a promedio\n" |>!
+    float~dos<-2.0!
+    return~a + b / dos!
+:|
+
+char~siguiente <| char~c |> |:
+    cout~<| "Entrando a siguiente\n" |>!
+    return~c !
+:|
+
+empty~__main__ <| |> |:
+
+    int~a<-10!
+    int~b<-5!
+    int~r!
+
+    float~x<-8.0!
+    float~y<-4.0!
+    float~f!
+
+    char~c<-'A'!
+    char~d!
+
+    cout~<| "==========\n" |>!
+
+    r <- sumar<|a,b|>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+    r <- restar<|r,2|>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+    r <- multiplicar<|r,3|>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+    f <- promedio<|x,y|>!
+    cout~<| f |>!
+    cout~<| "\n" |>!
+
+    d <- siguiente<|c|>!
+    cout~<| d |>!
+    cout~<| "\n" |>!
+
+    cout~<| "Llamadas anidadas enteras\n" |>!
+
+    r <- multiplicar<| sumar<|2,3|>, restar<|8,4|> |>!
+    cout~<| r |>!
+    cout~<| "\n" |>!
+
+    cout~<| "Llamadas anidadas flotantes\n" |>!
+
+    f <- promedio<| promedio<|8.0,4.0|>, promedio<|10.0,2.0|> |>!
+    cout~<| f |>!
+    cout~<| "\n" |>!
+
+    cout~<| "==========\n" |>!
+
+:|

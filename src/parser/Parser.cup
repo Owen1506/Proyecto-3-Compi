@@ -502,7 +502,7 @@ main_proc ::= EMPTY SEP MAIN:_main PAR_I PAR_D
                 tabla.insertar(new tabla.Simbolo("__main__", "empty", "funcion", _mainleft, _mainright, tabla.getScopeActual()));
                 tabla.entrarScope();
                 tabla.pushFuncionActual(new tabla.Simbolo("__main__", "empty", "funcion", _mainleft, _mainright, tabla.getScopeActual()));
-                generador.appendCod3D(_main + ":");
+                generador.appendCod3D("main" + ":");
                 generador.appendCod3D("prepareStack " + frameSize);
             :}
               cuerpo_funcion
@@ -511,7 +511,7 @@ main_proc ::= EMPTY SEP MAIN:_main PAR_I PAR_D
             tabla.popFuncionActual();
             generador.reemplazarLinea("prepareStack 0", "prepareStack " + frameSize);
             generador.appendCod3D("clearStack " + frameSize);
-            generador.appendCod3D(_main + "_end:");
+            generador.appendCod3D("main" + "_end:");
             :}
             ;
 

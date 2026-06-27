@@ -3,14 +3,57 @@ SCOPE: 0
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-__main__   empty      funcion      1      7     
+sumar      int        funcion      1      4     
+restar     int        funcion      6      4     
+multiplicar int        funcion      11     4     
+promedio   float      funcion      16     6     
+siguiente  char       funcion      22     5     
+__main__   empty      funcion      27     6     
 
 SCOPE: 1
 ------------------------------------------------------
 NOMBRE     TIPO       CATEGORIA    LIN    COL   
 ------------------------------------------------------
-miChar     char       variable     3      5     
-str1       string     variable     6      8     
-in1        int        variable     8      5     
-bl0        bool       variable     11     6     
-_x50_      int        arreglo      12     5     
+a          int        parametro    1      17    
+b          int        parametro    1      24    
+
+SCOPE: 2
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+a          int        parametro    6      18    
+b          int        parametro    6      25    
+
+SCOPE: 3
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+a          int        parametro    11     23    
+b          int        parametro    11     30    
+
+SCOPE: 4
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+a          float      parametro    16     24    
+b          float      parametro    16     33    
+dos        float      variable     18     10    
+
+SCOPE: 5
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+c          char       parametro    22     23    
+
+SCOPE: 6
+------------------------------------------------------
+NOMBRE     TIPO       CATEGORIA    LIN    COL   
+------------------------------------------------------
+a          int        variable     29     8     
+b          int        variable     30     8     
+r          int        variable     31     8     
+x          float      variable     33     10    
+y          float      variable     34     10    
+f          float      variable     35     10    
+c          char       variable     37     9     
+d          char       variable     38     9     

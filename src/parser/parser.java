@@ -1622,7 +1622,7 @@ class CUP$parser$actions {
                 tabla.insertar(new tabla.Simbolo("__main__", "empty", "funcion", _mainleft, _mainright, tabla.getScopeActual()));
                 tabla.entrarScope();
                 tabla.pushFuncionActual(new tabla.Simbolo("__main__", "empty", "funcion", _mainleft, _mainright, tabla.getScopeActual()));
-                generador.appendCod3D(_main + ":");
+                generador.appendCod3D("main" + ":");
                 generador.appendCod3D("prepareStack " + frameSize);
             
               CUP$parser$result = parser.getSymbolFactory().newSymbol("NT$2",63, ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
@@ -1643,7 +1643,7 @@ class CUP$parser$actions {
             tabla.popFuncionActual();
             generador.reemplazarLinea("prepareStack 0", "prepareStack " + frameSize);
             generador.appendCod3D("clearStack " + frameSize);
-            generador.appendCod3D(_main + "_end:");
+            generador.appendCod3D("main" + "_end:");
             
               CUP$parser$result = parser.getSymbolFactory().newSymbol("main_proc",5, ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-6)), ((java_cup.runtime.Symbol)CUP$parser$stack.peek()), RESULT);
             }

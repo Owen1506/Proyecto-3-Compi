@@ -28,24 +28,38 @@ public class mipsGenerator {
     private int lineaActual = 0;
     private int contadorAux = 0;
 
-    // Parámetros
+    // Parámetros de la función actual (recepción)
     private Map<String, Integer> paramIndices = new HashMap<>();
     private Map<String, Boolean> paramEsFloat = new HashMap<>();
+    private Map<String, String> paramRegInicial = new HashMap<>();
     private int numParametrosEnteros = 0;
     private int numParametrosFloat = 0;
+    private boolean paramsGuardados = false;
 
-    private boolean enRetorno = false;
+    // Envío de argumentos (push)
+    private int envioEnteros = 0;
+    private int envioFlotantes = 0;
 
-    private int tamañoStackAcumulado = 0;      // calculado a partir de variables locales
-    private int tamanoStackRequerido = 0;       // valor de prepareStack (alineado)
+    private int tamanoStackAcumulado = 0;
+    private int tamanoStackRequerido = 0;
     private String nombreFuncionActual = "";
     private boolean stackAllocated = false;
+
+    private String tipoRetornoLlamada = "int";
+
+    private int argStackSize = 0;
+    private int argStackOffset = 0;
+
+    private boolean funcionActualTieneRetorno = false;
+
+    // Indica si se ha utilizado la operación ^ para generar la función auxiliar una sola vez
+    private boolean potenciaUsada = false;
+    private boolean potenciaFloatUsada = false;
 
     public void setTabla(TablaManagement t) { this.tablaSimbolos = t; }
     public TablaManagement getTabla() { return tablaSimbolos; }
 
     public void agregarDato(String linea) { datos.append(linea).append("\n"); }
-
     public void agregarTexto(String linea) { texto.append(linea).append("\n"); }
 
     public void declararVariable(String nombre, int tamaño) {
@@ -57,7 +71,7 @@ public class mipsGenerator {
         }
         offsets.put(nombre, punteroStackGlobal);
         punteroStackGlobal += tamaño;
-        tamañoStackAcumulado = punteroStackGlobal;
+        tamanoStackAcumulado = punteroStackGlobal;
     }
 
     public int obtenerOffset(String nombre) {
@@ -116,6 +130,15 @@ public class mipsGenerator {
                 }
             }
             if (registrosLibres.isEmpty()) {
+                for (String t : new ArrayList<>(tempARegistro.keySet())) {
+                    if (esTemporal(t) && ultimoUso.getOrDefault(t, -1) < lineaActual) {
+                        String reg = tempARegistro.remove(t);
+                        registrosLibres.add(reg);
+                        break;
+                    }
+                }
+            }
+            if (registrosLibres.isEmpty()) {
                 throw new RuntimeException("No hay registros enteros libres");
             }
         }
@@ -135,6 +158,15 @@ public class mipsGenerator {
                 }
             }
             if (registrosLibresFloat.isEmpty()) {
+                for (String t : new ArrayList<>(tempARegistroFloat.keySet())) {
+                    if (esTemporal(t) && ultimoUsoFloat.getOrDefault(t, -1) < lineaActual) {
+                        String reg = tempARegistroFloat.remove(t);
+                        registrosLibresFloat.add(reg);
+                        break;
+                    }
+                }
+            }
+            if (registrosLibresFloat.isEmpty()) {
                 throw new RuntimeException("No hay registros flotantes libres");
             }
         }
@@ -144,7 +176,7 @@ public class mipsGenerator {
     }
 
     private void liberarRegSiUltimoUso(String temp) {
-        if ((!esTemporal(temp) && !esAuxiliar(temp)) || !ultimoUso.containsKey(temp)) return;
+        if (!esTemporal(temp)) return;
         if (ultimoUso.getOrDefault(temp, -1) == lineaActual && tempARegistro.containsKey(temp)) {
             String reg = tempARegistro.remove(temp);
             registrosLibres.add(reg);
@@ -152,10 +184,31 @@ public class mipsGenerator {
     }
 
     private void liberarRegFloatSiUltimoUso(String temp) {
-        if ((!esTemporal(temp) && !esAuxiliarFloat(temp)) || !ultimoUsoFloat.containsKey(temp)) return;
+        if (!esTemporal(temp)) return;
         if (ultimoUsoFloat.getOrDefault(temp, -1) == lineaActual && tempARegistroFloat.containsKey(temp)) {
             String reg = tempARegistroFloat.remove(temp);
             registrosLibresFloat.add(reg);
+        }
+    }
+
+    private void liberarAuxiliarDespuesDeUso(String reg) {
+        if (reg == null) return;
+        if (reg.startsWith("$f")) {
+            for (Map.Entry<String, String> e : tempARegistroFloat.entrySet()) {
+                if (e.getValue().equals(reg) && esAuxiliarFloat(e.getKey())) {
+                    tempARegistroFloat.remove(e.getKey());
+                    registrosLibresFloat.add(reg);
+                    return;
+                }
+            }
+        } else if (reg.startsWith("$t")) {
+            for (Map.Entry<String, String> e : tempARegistro.entrySet()) {
+                if (e.getValue().equals(reg) && esAuxiliar(e.getKey())) {
+                    tempARegistro.remove(e.getKey());
+                    registrosLibres.add(reg);
+                    return;
+                }
+            }
         }
     }
 
@@ -201,7 +254,10 @@ public class mipsGenerator {
     }
 
     private int getStackSizeAligned() {
-        int total = Math.max(tamañoStackAcumulado, tamanoStackRequerido);
+        int total = Math.max(tamanoStackAcumulado, tamanoStackRequerido);
+        if (!nombreFuncionActual.equals("main")) {
+            total += 4; // $ra
+        }
         return (total + 3) & ~3;
     }
 
@@ -210,35 +266,81 @@ public class mipsGenerator {
             int total = getStackSizeAligned();
             if (total > 0) {
                 agregarTexto("addi $sp, $sp, -" + total);
+                if (!nombreFuncionActual.equals("main")) {
+                    agregarTexto("sw $ra, " + (total - 4) + "($sp)");
+                }
             }
             stackAllocated = true;
+            guardarParametrosSiNecesario();
         }
     }
 
-    private String cargarOperando(String op) {
-        if (paramIndices.containsKey(op)) {
-            int idx = paramIndices.get(op);
-            boolean esFloat = paramEsFloat.get(op);
-            if (esFloat) {
-                String regArg = "$f" + (12 + idx * 2);
-                String aux = "_auxf_param_" + (contadorAux++);
-                String regTemp = asignarRegistroFloat(aux);
-                ultimoUsoFloat.put(aux, lineaActual);
-                agregarTexto("mov.s " + regTemp + ", " + regArg);
-                return regTemp;
-            } else {
-                String regArg = "$a" + idx;
-                String aux = "_aux_param_" + (contadorAux++);
-                String regTemp = asignarRegistro(aux);
-                ultimoUso.put(aux, lineaActual);
-                agregarTexto("move " + regTemp + ", " + regArg);
-                return regTemp;
+    private void guardarParametrosSiNecesario() {
+        if (paramsGuardados || paramRegInicial.isEmpty()) return;
+        for (Map.Entry<String, String> e : paramRegInicial.entrySet()) {
+            String nombre = e.getKey();
+            String origen = e.getValue();
+            int off = obtenerOffset(nombre);
+            if (off == -1) continue;
+            boolean esFloat = paramEsFloat.getOrDefault(nombre, false);
+            if (origen.startsWith("$")) {
+                if (esFloat) {
+                    agregarTexto("s.s " + origen + ", " + off + "($sp)");
+                } else {
+                    agregarTexto("sw " + origen + ", " + off + "($sp)");
+                }
+            } else if (origen.equals("stack")) {
+                int idx = paramIndices.get(nombre);
+                int offsetPila = (idx - (esFloat ? 2 : 4)) * 4;
+                int frameSize = getStackSizeAligned();
+                String aux = esFloat ? "_auxf_param_stack_" : "_aux_param_stack_";
+                aux += (contadorAux++);
+                String regTemp;
+                if (esFloat) {
+                    regTemp = asignarRegistroFloat(aux);
+                    ultimoUsoFloat.put(aux, lineaActual);
+                    agregarTexto("l.s " + regTemp + ", " + (frameSize + offsetPila) + "($sp)");
+                    agregarTexto("s.s " + regTemp + ", " + off + "($sp)");
+                } else {
+                    regTemp = asignarRegistro(aux);
+                    ultimoUso.put(aux, lineaActual);
+                    agregarTexto("lw " + regTemp + ", " + (frameSize + offsetPila) + "($sp)");
+                    agregarTexto("sw " + regTemp + ", " + off + "($sp)");
+                }
             }
         }
+        paramsGuardados = true;
+    }
 
+    private void emitirEpilogo(boolean esFloat) {
+        int total = getStackSizeAligned();
+        if (total > 0 && !nombreFuncionActual.equals("main")) {
+            agregarTexto("lw $ra, " + (total - 4) + "($sp)");
+            agregarTexto("addi $sp, $sp, " + total);
+        }
+        agregarTexto("jr $ra");
+    }
+
+    private boolean funcionContieneRetorno(List<String> lineas, int inicio) {
+        for (int i = inicio + 1; i < lineas.size(); i++) {
+            String l = lineas.get(i).trim();
+            if (l.isEmpty()) continue;
+            if (l.endsWith(":") && !l.startsWith("L")) break;
+            if (l.startsWith("return") || l.matches(".*= return.*")) return true;
+        }
+        return false;
+    }
+
+    private String cargarOperando(String op) {
         if (esTemporal(op)) {
             if (tempARegistroFloat.containsKey(op)) return tempARegistroFloat.get(op);
             if (tempARegistro.containsKey(op)) return tempARegistro.get(op);
+            if (tablaSimbolos != null && tablaSimbolos.existeEnHistorial(op)) {
+                Simbolo s = tablaSimbolos.buscarEnHistorial(op);
+                if (s.getTipo().equals("float")) {
+                    return asignarRegistroFloat(op);
+                }
+            }
             return asignarRegistro(op);
         }
 
@@ -296,6 +398,32 @@ public class mipsGenerator {
                 }
             }
         }
+
+        // ----- NUEVOS LITERALES COMPILADOS -----
+        // Notación fraccionaria: num//num  => división exacta, resultado float
+        if (op.matches("\\d+//\\d+")) {
+            String[] division = op.split("//");
+            double num = Double.parseDouble(division[0]);
+            double den = Double.parseDouble(division[1]);
+            double resultado = num / den;
+            String aux = "_auxf_lit_" + (contadorAux++);
+            String reg = asignarRegistroFloat(aux);
+            ultimoUsoFloat.put(aux, lineaActual);
+            agregarTexto("li.s " + reg + ", " + resultado);
+            return reg;
+        }
+
+        // Notación científica entera: 2e3, 5E2, etc.
+        if (op.matches("\\d+[eE]\\d+")) {
+            double val = Double.parseDouble(op);
+            int intVal = (int) val;   // debe ser exacto
+            String aux = "_aux_lit_" + (contadorAux++);
+            String reg = asignarRegistro(aux);
+            ultimoUso.put(aux, lineaActual);
+            agregarTexto("li " + reg + ", " + intVal);
+            return reg;
+        }
+        // ------------------------------------
 
         if ((op.startsWith("'") && op.endsWith("'") && op.length() == 3) ||
             (op.length() == 1 && !Character.isDigit(op.charAt(0)) && !op.equals("."))) {
@@ -438,6 +566,7 @@ public class mipsGenerator {
         }
     }
 
+    // ---------- Traducción principal ----------
     public String generarCodigo() throws IOException {
         List<String> lineas = leerCodigo3D();
         registrosLibres.addAll(Arrays.asList("$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"));
@@ -448,13 +577,7 @@ public class mipsGenerator {
             String linea = lineas.get(lineaActual).trim();
             if (linea.isEmpty()) continue;
 
-            if (enRetorno) {
-                if (linea.endsWith(":") && !linea.matches("L\\d+:.*")) {
-                    enRetorno = false;
-                } else {
-                    continue;
-                }
-            }
+            // Eliminado el bloque que descartaba líneas después de return (enRetorno)
 
             String[] partes = linea.split(" ");
 
@@ -467,7 +590,7 @@ public class mipsGenerator {
                 continue;
             }
 
-            // Asignación de string con espacios
+            // Asignación de string con espacios (más de 3 tokens)
             if (partes.length > 3 && partes[1].equals("=") && tablaSimbolos.existeEnHistorial(partes[0])) {
                 Simbolo s = tablaSimbolos.buscarEnHistorial(partes[0]);
                 if (s.getTipo().equals("string")) {
@@ -495,16 +618,22 @@ public class mipsGenerator {
                     agregarTexto(partes[0]);
                     if (!partes[0].startsWith("L")) {
                         nombreFuncionActual = partes[0].replace(":", "");
-                        tamañoStackAcumulado = 0;
+                        tamanoStackAcumulado = 0;
                         tamanoStackRequerido = 0;
                         punteroStackGlobal = 0;
                         offsets.clear();
                         paramIndices.clear();
                         paramEsFloat.clear();
+                        paramRegInicial.clear();
                         numParametrosEnteros = 0;
                         numParametrosFloat = 0;
-                        enRetorno = false;
+                        paramsGuardados = false;
                         stackAllocated = false;
+                        argStackSize = 0;
+                        argStackOffset = 0;
+                        envioEnteros = 0;
+                        envioFlotantes = 0;
+                        funcionActualTieneRetorno = funcionContieneRetorno(lineas, lineaActual);
                     }
                 } else if (partes[0].startsWith("data_")) {
                     procesarDeclaracionDatos(partes[0]);
@@ -517,16 +646,70 @@ public class mipsGenerator {
                     int val = Integer.parseInt(partes[1]);
                     tamanoStackRequerido = (val + 3) & ~3;
                 } else if (partes[0].equals("clearStack")) {
-                    int total = getStackSizeAligned();
-                    if (total > 0) {
-                        agregarTexto("addi $sp, $sp, " + total);
+                    if (!funcionActualTieneRetorno || nombreFuncionActual.equals("main")) {
+                        int total = getStackSizeAligned();
+                        if (total > 0) {
+                            if (!nombreFuncionActual.equals("main")) {
+                                agregarTexto("lw $ra, " + (total - 4) + "($sp)");
+                            }
+                            agregarTexto("addi $sp, $sp, " + total);
+                        }
+                        if (nombreFuncionActual.equals("main")) {
+                            agregarTexto("li $v0, 10");
+                            agregarTexto("syscall");
+                        }
                     }
                 } else if (partes[0].equals("call")) {
-                    agregarTexto("jal " + partes[1]);
+                    if (argStackSize > 0) {
+                        agregarTexto("addi $sp, $sp, -" + argStackSize);
+                    }
+                    String func = partes[1];
+                    if (tablaSimbolos.existeEnHistorial(func)) {
+                        Simbolo sf = tablaSimbolos.buscarEnHistorial(func);
+                        tipoRetornoLlamada = sf.getTipo();
+                    }
+                    agregarTexto("jal " + func);
+                    if (argStackSize > 0) {
+                        agregarTexto("addi $sp, $sp, " + argStackSize);
+                    }
+                    envioEnteros = 0;
+                    envioFlotantes = 0;
+                    argStackSize = 0;
+                    argStackOffset = 0;
                 } else if (partes[0].equals("push")) {
                     String regVal = cargarOperando(partes[1]);
-                    agregarTexto("move $a" + numParametrosEnteros + ", " + regVal);
-                    numParametrosEnteros++;
+                    boolean esFloat = regVal.startsWith("$f");
+                    if (!esFloat) {
+                        if (envioEnteros < 4) {
+                            agregarTexto("move $a" + envioEnteros + ", " + regVal);
+                            envioEnteros++;
+                        } else {
+                            if (argStackSize == 0) {
+                                argStackSize = 4;
+                                argStackOffset = 0;
+                            } else {
+                                argStackSize += 4;
+                            }
+                            agregarTexto("sw " + regVal + ", " + argStackOffset + "($sp)");
+                            argStackOffset += 4;
+                            envioEnteros++;
+                        }
+                    } else {
+                        if (envioFlotantes < 2) {
+                            agregarTexto("mov.s $f" + (12 + envioFlotantes * 2) + ", " + regVal);
+                            envioFlotantes++;
+                        } else {
+                            if (argStackSize == 0) {
+                                argStackSize = 4;
+                                argStackOffset = 0;
+                            } else {
+                                argStackSize += 4;
+                            }
+                            agregarTexto("s.s " + regVal + ", " + argStackOffset + "($sp)");
+                            argStackOffset += 4;
+                            envioFlotantes++;
+                        }
+                    }
                 } else if (partes[0].equals("goto")) {
                     agregarTexto("j " + partes[1]);
                 } else if (partes[0].equals("print")) {
@@ -550,14 +733,13 @@ public class mipsGenerator {
                                 agregarTexto("li $v0, 11");
                                 agregarTexto("syscall");
                                 break;
-                            default: // int, bool
+                            default:
                                 String regInt = cargarOperando(op);
                                 agregarTexto("move $a0, " + regInt);
                                 agregarTexto("li $v0, 1");
                                 agregarTexto("syscall");
                         }
                     } else {
-                        // Literal
                         if (esLiteralCaracter(op)) {
                             String reg = cargarOperando(op);
                             agregarTexto("move $a0, " + reg);
@@ -581,7 +763,16 @@ public class mipsGenerator {
                 if (partes[1].equals("=")) {
                     String destino = partes[0];
                     String fuente = partes[2];
-                    if (esTemporal(destino)) {
+
+                    if (fuente.equals("retval")) {
+                        if (tipoRetornoLlamada.equals("float")) {
+                            String regDest = asignarRegistroFloat(destino);
+                            agregarTexto("mov.s " + regDest + ", $f0");
+                        } else {
+                            String regDest = asignarRegistro(destino);
+                            agregarTexto("move " + regDest + ", $v0");
+                        }
+                    } else if (esTemporal(destino)) {
                         String regFuente = cargarOperando(fuente);
                         boolean esFloat = regFuente.startsWith("$f");
                         if (esFloat) {
@@ -594,6 +785,8 @@ public class mipsGenerator {
                         if (esTemporal(fuente)) {
                             if (esFloat) liberarRegFloatSiUltimoUso(fuente);
                             else liberarRegSiUltimoUso(fuente);
+                        } else {
+                            liberarAuxiliarDespuesDeUso(regFuente);
                         }
                     } else if (tablaSimbolos.existeEnHistorial(destino)) {
                         Simbolo sd = tablaSimbolos.buscarEnHistorial(destino);
@@ -606,6 +799,8 @@ public class mipsGenerator {
                             if (esTemporal(fuente)) {
                                 if (regFuente.startsWith("$f")) liberarRegFloatSiUltimoUso(fuente);
                                 else liberarRegSiUltimoUso(fuente);
+                            } else {
+                                liberarAuxiliarDespuesDeUso(regFuente);
                             }
                         }
                     } else if (destino.equals("return")) {
@@ -615,8 +810,7 @@ public class mipsGenerator {
                         } else {
                             agregarTexto("move $v0, " + regVal);
                         }
-                        agregarTexto("jr $ra");
-                        enRetorno = true;
+                        emitirEpilogo(regVal.startsWith("$f"));
                     }
                 } else if (partes[0].equals("return")) {
                     String regVal = cargarOperando(partes[1]);
@@ -625,8 +819,7 @@ public class mipsGenerator {
                     } else {
                         agregarTexto("move $v0, " + regVal);
                     }
-                    agregarTexto("jr $ra");
-                    enRetorno = true;
+                    emitirEpilogo(regVal.startsWith("$f"));
                 } else if (partes[0].endsWith(":") && partes[1].equals(".space")) {
                     if (datos.indexOf(partes[0]) == -1) {
                         datos.append(".align 2\n");
@@ -671,6 +864,8 @@ public class mipsGenerator {
                             case "greather_te": agregarTexto("bge " + reg1 + ", " + reg2 + ", " + etiqueta); break;
                         }
                     }
+                    liberarAuxiliarDespuesDeUso(reg1);
+                    liberarAuxiliarDespuesDeUso(reg2);
                 }
             }
             else if (partes.length == 5) {
@@ -679,7 +874,50 @@ public class mipsGenerator {
                     String regOp1 = cargarOperando(op1);
                     String regOp2 = cargarOperando(op2);
                     boolean floatOp = regOp1.startsWith("$f") || regOp2.startsWith("$f");
-                    if (floatOp) {
+
+                    // Módulo: implementación directa para enteros y flotantes
+                    if (oper.equals("%")) {
+                        if (floatOp) {
+                            // Módulo flotante: fmod(a,b) = a - trunc(a/b) * b
+                            String regDest = asignarRegistroFloat(dest);
+                            String temp1 = "_auxf_mod1_" + (contadorAux++);
+                            String fTemp1 = asignarRegistroFloat(temp1);
+                            String temp2 = "_auxf_mod2_" + (contadorAux++);
+                            String fTemp2 = asignarRegistroFloat(temp2);
+
+                            agregarTexto("div.s " + fTemp1 + ", " + regOp1 + ", " + regOp2);
+                            agregarTexto("trunc.w.s " + fTemp2 + ", " + fTemp1);
+                            agregarTexto("cvt.s.w " + fTemp2 + ", " + fTemp2);
+                            agregarTexto("mul.s " + regDest + ", " + fTemp2 + ", " + regOp2);
+                            agregarTexto("sub.s " + regDest + ", " + regOp1 + ", " + regDest);
+
+                            liberarAuxiliarDespuesDeUso(fTemp1);
+                            liberarAuxiliarDespuesDeUso(fTemp2);
+                        } else {
+                            // Módulo entero
+                            String regDest = asignarRegistro(dest);
+                            agregarTexto("div " + regOp1 + ", " + regOp2);
+                            agregarTexto("mfhi " + regDest);
+                        }
+                    } else if (oper.equals("^")) {
+                        if (floatOp) {
+                            // Potencia flotante: el exponente se trunca a entero
+                            String regDest = asignarRegistroFloat(dest);
+                            agregarTexto("mov.s $f12, " + regOp1);
+                            agregarTexto("mov.s $f14, " + regOp2);
+                            agregarTexto("jal potenciaFloatMIPS");
+                            agregarTexto("mov.s " + regDest + ", $f0");
+                            potenciaFloatUsada = true;
+                        } else {
+                            // Potencia entera
+                            String regDest = asignarRegistro(dest);
+                            agregarTexto("move $a0, " + regOp1);
+                            agregarTexto("move $a1, " + regOp2);
+                            agregarTexto("jal potenciaMIPS");
+                            agregarTexto("move " + regDest + ", $v0");
+                            potenciaUsada = true;
+                        }
+                    } else if (floatOp) {
                         String regDest = asignarRegistroFloat(dest);
                         switch (oper) {
                             case "+": agregarTexto("add.s " + regDest + ", " + regOp1 + ", " + regOp2); break;
@@ -696,12 +934,13 @@ public class mipsGenerator {
                             case "/": agregarTexto("div " + regDest + ", " + regOp1 + ", " + regOp2); break;
                         }
                     }
+                    if (esTemporal(op1)) liberarRegSiUltimoUso(op1); else liberarAuxiliarDespuesDeUso(regOp1);
+                    if (esTemporal(op2)) liberarRegSiUltimoUso(op2); else liberarAuxiliarDespuesDeUso(regOp2);
                 } else if (partes[0].equals("arr_store")) {
                     ejecutarArrStore(partes[1].replace(",", ""), partes[2].replace(",", ""), partes[3].replace(",", ""), partes[4]);
                 }
             }
             else if (partes.length == 6) {
-                // Formato: destino = arr_load array, fila, columna
                 if (partes[1].equals("=") && partes[2].equals("arr_load")) {
                     String destino = partes[0];
                     String nombreArray = partes[3].replace(",", "");
@@ -740,10 +979,38 @@ public class mipsGenerator {
                             case ">=": agregarTexto("bge " + reg1 + ", " + reg2 + ", " + etiqueta); break;
                         }
                     }
+                    liberarAuxiliarDespuesDeUso(reg1);
+                    liberarAuxiliarDespuesDeUso(reg2);
                 }
             }
 
             liberarAuxiliaresDeLineaActual();
+        }
+
+        // Insertar funciones auxiliares de potencia con nombres fijos
+        if (potenciaUsada) {
+            agregarTexto("potenciaMIPS:");
+            agregarTexto("li $v0, 1");
+            agregarTexto("buclePotenciaEntero:");
+            agregarTexto("blez $a1, finPotenciaEntero");
+            agregarTexto("mul $v0, $v0, $a0");
+            agregarTexto("addi $a1, $a1, -1");
+            agregarTexto("j buclePotenciaEntero");
+            agregarTexto("finPotenciaEntero:");
+            agregarTexto("jr $ra");
+        }
+        if (potenciaFloatUsada) {
+            agregarTexto("potenciaFloatMIPS:");
+            agregarTexto("li.s $f0, 1.0");
+            agregarTexto("cvt.w.s $f14, $f14");
+            agregarTexto("mfc1 $a1, $f14");
+            agregarTexto("buclePotenciaFlotante:");
+            agregarTexto("blez $a1, finPotenciaFlotante");
+            agregarTexto("mul.s $f0, $f0, $f12");
+            agregarTexto("addi $a1, $a1, -1");
+            agregarTexto("j buclePotenciaFlotante");
+            agregarTexto("finPotenciaFlotante:");
+            agregarTexto("jr $ra");
         }
 
         tempARegistro.clear();
@@ -772,7 +1039,8 @@ public class mipsGenerator {
     }
 
     private boolean esOperadorAritmetico(String token) {
-        return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/");
+        return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/")
+            || token.equals("%") || token.equals("^");
     }
 
     private boolean esLiteralCaracter(String op) {
@@ -810,13 +1078,25 @@ public class mipsGenerator {
         if (partes.length < 3) return;
         String tipo = partes[1];
         String nombre = partes[2];
-        if (tipo.equals("float")) {
-            if (numParametrosFloat >= 2) throw new RuntimeException("Demasiados parámetros flotantes");
+        boolean esFloat = tipo.equals("float");
+        declararVariable(nombre, 4);
+        if (esFloat) {
+            if (numParametrosFloat < 2) {
+                String reg = "$f" + (12 + numParametrosFloat * 2);
+                paramRegInicial.put(nombre, reg);
+            } else {
+                paramRegInicial.put(nombre, "stack");
+            }
             paramIndices.put(nombre, numParametrosFloat);
             paramEsFloat.put(nombre, true);
             numParametrosFloat++;
         } else {
-            if (numParametrosEnteros >= 4) throw new RuntimeException("Demasiados parámetros enteros");
+            if (numParametrosEnteros < 4) {
+                String reg = "$a" + numParametrosEnteros;
+                paramRegInicial.put(nombre, reg);
+            } else {
+                paramRegInicial.put(nombre, "stack");
+            }
             paramIndices.put(nombre, numParametrosEnteros);
             paramEsFloat.put(nombre, false);
             numParametrosEnteros++;
@@ -829,7 +1109,7 @@ public class mipsGenerator {
         resultado.append(datos);
         resultado.append("\n.text\n");
         resultado.append(".globl main\n");
-        resultado.append("main:\n");
+
         resultado.append(texto);
         resultado.append("li $v0, 10\n");
         resultado.append("syscall\n");

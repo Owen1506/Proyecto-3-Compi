@@ -1,38 +1,159 @@
-__main__:
-prepareStack 10
-data_char_miChar
-miChar = !
-print miChar
+sumar:
+prepareStack 0
+param_int_a
+param_int_b
+print_string Entrando a sumar\n
+t1 = a + b
+clearStack 0
+return = t1
+goto sumar_end
+clearStack 0
+sumar_end:
+restar:
+prepareStack 0
+param_int_a
+param_int_b
+print_string Entrando a restar\n
+t2 = a - b
+clearStack 0
+return = t2
+goto restar_end
+clearStack 0
+restar_end:
+multiplicar:
+prepareStack 0
+param_int_a
+param_int_b
+print_string Entrando a multiplicar\n
+t3 = a * b
+clearStack 0
+return = t3
+goto multiplicar_end
+clearStack 0
+multiplicar_end:
+promedio:
+prepareStack 4
+param_float_a
+param_float_b
+print_string Entrando a promedio\n
+data_float_dos
+t4 = 2.0
+dos = t4
+t5 = b / dos
+t6 = a + t5
+clearStack 4
+return = t6
+goto promedio_end
+clearStack 4
+promedio_end:
+siguiente:
+prepareStack 0
+param_char_c
+print_string Entrando a siguiente\n
+clearStack 0
+return = c
+goto siguiente_end
+clearStack 0
+siguiente_end:
+main:
+prepareStack 26
+data_int_a
+t7 = 10
+a = t7
+data_int_b
+t8 = 5
+b = t8
+data_int_r
+r = 0
+data_float_x
+t9 = 8.0
+x = t9
+data_float_y
+t10 = 4.0
+y = t10
+data_float_f
+f = 0.0
+data_char_c
+c = A
+data_char_d
+d = '0'
+print_string ==========\n
+push a
+push b
+call sumar
+t11 = retval
+r = t11
+print r
 print_string \n
-data_string_str1
-str1 = Mi string~1\n
-print str1
-data_int_in1
-t1 = 10
-in1 = t1
-print in1
+push r
+t12 = 2
+push t12
+call restar
+t13 = retval
+r = t13
+print r
 print_string \n
-data_bool_bl0
-t2 = 6.7
-t3 = 8.9
-if t2 != t3 goto L0
-goto L1
-L0:
-t4 = 1
-goto L2
-L1:
-t4 = 0
-L2:
-bl0 = t4
-data_int_array__x50_
-t5 = 4
-t6 = 5
-_x50_: .space 8
-arr_store _x50_, 0, 0, t5
-arr_store _x50_, 0, 1, t6
-t7 = 0
-t8 = 0
-t9 = arr_load _x50_, t7, t8
-print t9
-clearStack 10
-__main___end:
+push r
+t14 = 3
+push t14
+call multiplicar
+t15 = retval
+r = t15
+print r
+print_string \n
+push x
+push y
+call promedio
+t16 = retval
+f = t16
+print f
+print_string \n
+push c
+call siguiente
+t17 = retval
+d = t17
+print d
+print_string \n
+print_string Llamadas anidadas enteras\n
+t18 = 2
+push t18
+t19 = 3
+push t19
+call sumar
+t20 = retval
+push t20
+t21 = 8
+push t21
+t22 = 4
+push t22
+call restar
+t23 = retval
+push t23
+call multiplicar
+t24 = retval
+r = t24
+print r
+print_string \n
+print_string Llamadas anidadas flotantes\n
+t25 = 8.0
+push t25
+t26 = 4.0
+push t26
+call promedio
+t27 = retval
+push t27
+t28 = 10.0
+push t28
+t29 = 2.0
+push t29
+call promedio
+t30 = retval
+push t30
+call promedio
+t31 = retval
+f = t31
+print f
+print_string \n
+print_string ==========\n
+clearStack 26
+main_end:
