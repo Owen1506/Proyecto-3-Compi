@@ -3,7 +3,8 @@ float~func1 <| char~x22,char~x23 |> |:
     cout~<| "=== Entrando a func1 ===\n" |>!
 
     string~sss<-"Hola"!
-
+	string~apa!
+	apa<- sss!
     int~numero<-20 + 5!
     int~g!
     char~letra<-'a'!
@@ -43,7 +44,7 @@ float~func1 <| char~x22,char~x23 |> |:
     cout~<| _x50_<<0>><<1>> |>!
     cout~<| "\n" |>!
 
-    ff <- _x502_<<_x30_+2>><<_x30_-2>> * 2.0
+    ff <- _x502_<<_x30_+2>><<_x30_ - 2>> * 2.0 !
 
     cout~<| "ff = " |>!
     cout~<| ff |>!

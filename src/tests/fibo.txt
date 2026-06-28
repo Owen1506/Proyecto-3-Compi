@@ -1,0 +1,46 @@
+int~fibonacci <| int~n |> |:
+
+    cout~<| "Entrando a fibonacci\n" |>!
+
+    if~ <| less_te<|n,1|> |> |:
+        return~n!
+    :|
+
+    int~a<-0!
+    int~b<-1!
+    int~i<-2!
+    int~temp!
+
+    do~ |:
+
+        temp <- a + b!
+        a <- b!
+        b <- temp!
+        i <- i + 1!
+
+    :| while~ <| less_te<|i,n|> |>!
+
+    return~b!
+
+:|
+
+empty~__main__ <| |> |:
+
+    cout~<| "===== FIBONACCI =====\n" |>!
+
+    int~n<-10!
+    int~resultado!
+
+    cout~<| "Calculando Fibonacci de " |>!
+    cout~<| n |>!
+    cout~<| "\n" |>!
+
+    resultado <- fibonacci<|n|>!
+
+    cout~<| "Resultado = " |>!
+    cout~<| resultado |>!
+    cout~<| "\n" |>!
+
+    cout~<| "===== FIN =====\n" |>!
+
+:|

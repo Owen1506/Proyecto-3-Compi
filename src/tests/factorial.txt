@@ -1,0 +1,35 @@
+int~factorial <| int~n |> |:
+
+    cout~<| "Entrando factorial( " |>!
+    cout~<| n |>!
+    cout~<| ")\n" |>!
+
+    if~ <| less_te<|n,1|> |> |:
+        return~1!
+    :|
+
+    int~aux!
+    int~uno<-1!
+
+    aux <- factorial<| n - uno |>!
+
+    return~n * aux!
+
+:|
+
+empty~__main__ <| |> |:
+
+    int~x<-5!
+    int~res!
+
+    cout~<| "Calculando factorial de  " |>!
+    cout~<| x |>!
+    cout~<| "\n" |>!
+
+    res <- factorial<|x|>!
+
+    cout~<| "Resultado = " |>!
+    cout~<| res |>!
+    cout~<| "\n" |>!
+
+:|

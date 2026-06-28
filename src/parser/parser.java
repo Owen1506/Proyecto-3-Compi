@@ -1945,6 +1945,12 @@ class CUP$parser$actions {
                         if ("int_arr".equals(dec_num_int)) {
                             generador.reemplazarLinea("data_int_" + id, "data_int_array_" + id);
                             tabla.insertar(new tabla.Simbolo(id,"int","arreglo",idleft,idright,tabla.getScopeActual()));
+                            Simbolo s = tabla.buscarSimbolo(id);
+                           
+                            if (s != null) {
+                                s.setFilas(globalFilas);
+                                s.setColumnas(globalColumnas);
+                            }
                         } else {
                             tabla.insertar(new tabla.Simbolo(id,"int","variable",idleft,idright,tabla.getScopeActual()));
                             if (!"PYC".equals(dec_num_int)) {
@@ -2001,6 +2007,12 @@ class CUP$parser$actions {
                         if ("float_arr".equals(dec_num_float)) {
                             generador.reemplazarLinea("data_float_" + id, "data_float_array_" + id);
                             tabla.insertar(new tabla.Simbolo(id,"float","arreglo",idleft,idright,tabla.getScopeActual()));
+                            Simbolo s = tabla.buscarSimbolo(id);
+                            
+                            if (s != null) {
+                                s.setFilas(globalFilas);
+                                s.setColumnas(globalColumnas);
+                            }
                         } else {
                             tabla.insertar(new tabla.Simbolo(id,"float","variable",idleft,idright,tabla.getScopeActual()));
                             if (!"PYC".equals(dec_num_float)) {
@@ -2057,11 +2069,14 @@ class CUP$parser$actions {
                             int elemSize = 4; // int
                             int totalSize = filas * columnas * elemSize;
                             generador.appendCod3D(globalID + ": .space " + totalSize);
-                            // Actualizar símbolo
+                            globalFilas = filas;
+                            globalColumnas = columnas;
                             Simbolo s = tabla.buscarSimbolo(globalID);
+                    
                             if (s != null) {
                                 s.setFilas(filas);
                                 s.setColumnas(columnas);
+                                
                                 s.setElemSize(elemSize);
                                 s.setCategoria("arreglo");
                             }
@@ -2102,10 +2117,14 @@ class CUP$parser$actions {
                             int elemSize = 4;
                             int totalSize = filas * columnas * elemSize;
                             generador.appendCod3D(globalID + ": .space " + totalSize);
+                            globalFilas = filas;
+                            globalColumnas = columnas;
                             Simbolo s = tabla.buscarSimbolo(globalID);
+                        
                             if (s != null) {
                                 s.setFilas(filas);
                                 s.setColumnas(columnas);
+                                
                                 s.setElemSize(elemSize);
                                 s.setCategoria("arreglo");
                             }
@@ -2164,7 +2183,8 @@ class CUP$parser$actions {
                             int elemSize = 4; // float
                             int totalSize = filas * columnas * elemSize;
                             generador.appendCod3D(globalID + ": .space " + totalSize);
-                            // Actualizar símbolo
+                            globalFilas = filas;
+                            globalColumnas = columnas;
                             Simbolo s = tabla.buscarSimbolo(globalID);
                             if (s != null) {
                                 s.setFilas(filas);
@@ -2209,6 +2229,8 @@ class CUP$parser$actions {
                             int elemSize = 4;
                             int totalSize = filas * columnas * elemSize;
                             generador.appendCod3D(globalID + ": .space " + totalSize);
+                            globalFilas = filas;
+                            globalColumnas = columnas;
                             Simbolo s = tabla.buscarSimbolo(globalID);
                             if (s != null) {
                                 s.setFilas(filas);
@@ -4539,7 +4561,7 @@ class CUP$parser$actions {
                             String tiposEsperados = s.getParametros();
                             if (tiposEsperados == null || tiposEsperados.trim().isEmpty()) {
                                 tiposEsperados = "";
-                                System.out.println("La funcion " + id + " no tiene parametros");
+                               
                             }else{
                            
                             String[] listadoParametros = tiposEsperados.split(",");
@@ -4552,10 +4574,10 @@ class CUP$parser$actions {
                             }
                             String resultadoFinal = tiposResultantes.toString();
                             tiposEsperados = resultadoFinal;
-                            System.out.println("Tipos esperados por la funcion " + id + ": " + tiposEsperados);
+                            
                         }
                         String tiposRecibidos = args;
-                        System.out.println("Tipos recibidos en la llamada a " + id + ": " + tiposRecibidos);
+                       
                         if (tiposEsperados == null) tiposEsperados = "";
                         if (tiposRecibidos == null) tiposRecibidos = "";
                         if (!tiposEsperados.equals(tiposRecibidos)) {

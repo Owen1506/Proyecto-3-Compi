@@ -9,7 +9,6 @@ import tabla.TablaManagement;
 
 public class mipsGenerator {
 
-
     private static class FrameLayout {
         final boolean esMain;
         final Map<String, Integer> offsets = new LinkedHashMap<>();
@@ -54,13 +53,11 @@ public class mipsGenerator {
     private StringBuilder texto = new StringBuilder();
     private TablaManagement tablaSimbolos;
 
-    // Frame actual
     private FrameLayout frameActual = null;
     private String nombreFuncionActual = "";
     private boolean stackAllocated = false;
     private boolean preScanHecho = false;
 
-    // Registros temporales
     private Map<String, Integer> ultimoUso = new HashMap<>();
     private Map<String, String> tempARegistro = new HashMap<>();
     private Queue<String> registrosLibres = new LinkedList<>();
@@ -70,7 +67,7 @@ public class mipsGenerator {
 
     private int lineaActual = 0;
     private int contadorAux = 0;
-
+    private int contStringLit = 0;
     private List<String> paramsNombres = new ArrayList<>();
     private List<String> paramsRegs = new ArrayList<>();
 
@@ -82,6 +79,19 @@ public class mipsGenerator {
 
     private boolean potenciaUsada = false;
     private boolean potenciaFloatUsada = false;
+
+    private Map<String, String> stringVars = new LinkedHashMap<>();
+
+    private String convertirAFloat(String reg) {
+        if (reg.startsWith("$f")) return reg;
+
+        String temp = "_auxf_cvrt_" + (contadorAux++);
+        String freg = asignarRegistroFloat(temp);
+        ultimoUsoFloat.put(temp, lineaActual);
+        agregarTexto("mtc1 " + reg + ", " + freg);
+        agregarTexto("cvt.s.w " + freg + ", " + freg);
+        return freg;
+    }
 
     public void setTabla(TablaManagement t) { this.tablaSimbolos = t; }
     public TablaManagement getTabla() { return tablaSimbolos; }
@@ -239,6 +249,7 @@ public class mipsGenerator {
                 if (p.length < 2) continue;
                 String tipo = p[0], nombre = p[1];
                 if (nombre.isEmpty()) continue;
+                if (tipo.equals("string")) continue;
                 int tam = (tipo.equals("char") || tipo.equals("bool")) ? 1 : 4;
                 frameActual.agregarVariable(nombre, tam, tipo);
             } else if (partes.length == 1 && partes[0].startsWith("param_")) {
@@ -456,7 +467,6 @@ public class mipsGenerator {
         Simbolo arrSim = tablaSimbolos.buscarEnHistorial(nombreArray);
         if (arrSim == null) throw new RuntimeException("Arreglo no encontrado: " + nombreArray);
         int columnas = arrSim.getColumnas();
-
         if (esEnteroConstante(filaToken) && esEnteroConstante(colToken)) {
             int fila = Integer.parseInt(filaToken);
             int col = Integer.parseInt(colToken);
@@ -485,21 +495,70 @@ public class mipsGenerator {
     private void ejecutarArrStore(String nombreArray, String fila, String col, String valor) {
         String dirInfo = calcularDireccionArreglo(nombreArray, fila, col);
         String regValor = cargarOperando(valor);
+        
+        Simbolo arrSim = tablaSimbolos.buscarEnHistorial(nombreArray);
+        boolean esFloat = arrSim != null && arrSim.getTipo().equals("float");
+        
+        if (esFloat && !regValor.startsWith("$f")) {
+            String tempFloat = "_auxf_arrval_" + (contadorAux++);
+            String freg = asignarRegistroFloat(tempFloat);
+            ultimoUsoFloat.put(tempFloat, lineaActual);
+            agregarTexto("mtc1 " + regValor + ", " + freg);
+            agregarTexto("cvt.s.w " + freg + ", " + freg);
+            regValor = freg;
+        }
+        
         if (dirInfo.startsWith("CONST:")) {
             String[] partes = dirInfo.split(":");
-            String base = partes[1]; int offset = Integer.parseInt(partes[2]);
-            agregarTexto("sw " + regValor + ", " + offset + "(" + base + ")"); liberarRegistroForzado(base);
-        } else { agregarTexto("sw " + regValor + ", 0(" + dirInfo + ")"); liberarRegistroForzado(dirInfo); }
-        if (esTemporal(valor)) liberarRegSiUltimoUso(valor); else if (regValor.startsWith("$f")) liberarRegFloatSiUltimoUso(valor);
+            String base = partes[1];
+            int offset = Integer.parseInt(partes[2]);
+            if (esFloat)
+                agregarTexto("s.s " + regValor + ", " + offset + "(" + base + ")");
+            else
+                agregarTexto("sw " + regValor + ", " + offset + "(" + base + ")");
+            liberarRegistroForzado(base);
+        } else {
+            if (esFloat)
+                agregarTexto("s.s " + regValor + ", 0(" + dirInfo + ")");
+            else
+                agregarTexto("sw " + regValor + ", 0(" + dirInfo + ")");
+            liberarRegistroForzado(dirInfo);
+        }
+        
+        if (esTemporal(valor)) {
+            liberarRegSiUltimoUso(valor);
+        } else if (regValor.startsWith("$f")) {
+            liberarRegFloatSiUltimoUso(valor);
+        }
     }
     private void ejecutarArrLoad(String destino, String nombreArray, String fila, String col) {
         String dirInfo = calcularDireccionArreglo(nombreArray, fila, col);
-        String regDest = asignarRegistro(destino);
+        Simbolo arrSim = tablaSimbolos.buscarEnHistorial(nombreArray);
+        boolean esFloat = arrSim != null && arrSim.getTipo().equals("float");
+        
+        String regDest;
+        if (esFloat) {
+            regDest = asignarRegistroFloat(destino);
+        } else {
+            regDest = asignarRegistro(destino);
+        }
+        
         if (dirInfo.startsWith("CONST:")) {
             String[] partes = dirInfo.split(":");
-            String base = partes[1]; int offset = Integer.parseInt(partes[2]);
-            agregarTexto("lw " + regDest + ", " + offset + "(" + base + ")"); liberarRegistroForzado(base);
-        } else { agregarTexto("lw " + regDest + ", 0(" + dirInfo + ")"); liberarRegistroForzado(dirInfo); }
+            String base = partes[1];
+            int offset = Integer.parseInt(partes[2]);
+            if (esFloat)
+                agregarTexto("l.s " + regDest + ", " + offset + "(" + base + ")");
+            else
+                agregarTexto("lw " + regDest + ", " + offset + "(" + base + ")");
+            liberarRegistroForzado(base);
+        } else {
+            if (esFloat)
+                agregarTexto("l.s " + regDest + ", 0(" + dirInfo + ")");
+            else
+                agregarTexto("lw " + regDest + ", 0(" + dirInfo + ")");
+            liberarRegistroForzado(dirInfo);
+        }
     }
 
     public String generarCodigo() throws IOException {
@@ -513,6 +572,12 @@ public class mipsGenerator {
             if (linea.isEmpty()) continue;
             String[] partes = linea.split(" ");
 
+            if (partes.length == 1 && partes[0].startsWith("data_string_")) {
+                String nombre = partes[0].substring("data_string_".length());
+                stringVars.putIfAbsent(nombre, "");
+                continue;
+            }
+
             if (partes[0].equals("print_string")) {
                 asignarStackSiNecesario();
                 String argumento = linea.substring(linea.indexOf(' ') + 1);
@@ -524,10 +589,22 @@ public class mipsGenerator {
             if (partes.length >= 3 && partes[1].equals("=") && tablaSimbolos.existeEnHistorial(partes[0])) {
                 Simbolo s = tablaSimbolos.buscarEnHistorial(partes[0]);
                 if (s.getTipo().equals("string")) {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 2; i < partes.length; i++) { if (i>2) sb.append(" "); sb.append(partes[i]); }
-                    datos.append(".align 2\n"); agregarDato(partes[0] + ": .asciiz \"" + sb.toString() + "\"");
-                    liberarAuxiliaresDeLineaActual(); continue;
+                    String dest = partes[0];
+                    String literal;
+                    if (partes.length == 3 && tablaSimbolos.existeEnHistorial(partes[2])
+                            && tablaSimbolos.buscarEnHistorial(partes[2]).getTipo().equals("string")) {
+                        literal = stringVars.getOrDefault(partes[2], "");
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 2; i < partes.length; i++) {
+                            if (i > 2) sb.append(" ");
+                            sb.append(partes[i]);
+                        }
+                        literal = sb.toString();
+                    }
+                    stringVars.put(dest, literal);
+                    liberarAuxiliaresDeLineaActual();
+                    continue;
                 }
             }
 
@@ -550,7 +627,7 @@ public class mipsGenerator {
                 asignarStackSiNecesario();
 
             if (partes.length == 2) {
-                if (partes[0].equals("prepareStack")) { /* ignoramos */ }
+                if (partes[0].equals("prepareStack")) { }
                 else if (partes[0].equals("clearStack")) {
                     if (!funcionActualTieneRetorno || nombreFuncionActual.equals("main")) {
                         int total = frameActual.tamaño();
@@ -588,14 +665,41 @@ public class mipsGenerator {
                     } else {
                         if (esLiteralCaracter(op)) {
                             String reg = cargarOperando(op);
-                            agregarTexto("move $a0, " + reg); agregarTexto("li $v0, 11"); agregarTexto("syscall");
-                        } else if (op.contains(".")) {
-                            String reg = cargarOperando(op);
-                            agregarTexto("mov.s $f12, " + reg); agregarTexto("li $v0, 2"); agregarTexto("syscall");
+                            agregarTexto("move $a0, " + reg);
+                            agregarTexto("li $v0, 11"); agregarTexto("syscall");
                         } else {
                             String reg = cargarOperando(op);
-                            agregarTexto("move $a0, " + reg); agregarTexto("li $v0, 1"); agregarTexto("syscall");
+                            if (reg.startsWith("$f")) {
+                                agregarTexto("mov.s $f12, " + reg);
+                                agregarTexto("li $v0, 2"); agregarTexto("syscall");
+                            } else {
+                                agregarTexto("move $a0, " + reg);
+                                agregarTexto("li $v0, 1"); agregarTexto("syscall");
+                            }
                         }
+                    }
+                } else if (partes[0].equals("read")) {
+                    // Soporte para lectura (cin → read)
+                    String varName = partes[1];
+                    Simbolo s = tablaSimbolos.buscarEnHistorial(varName);
+                    if (s == null) {
+                        throw new RuntimeException("Variable no declarada en read: " + varName);
+                    }
+                    String tipo = s.getTipo();
+                    if (!tipo.equals("int") && !tipo.equals("float")) {
+                        throw new RuntimeException("read solo soporta int y float, no " + tipo);
+                    }
+
+                    asignarStackSiNecesario();
+
+                    if (tipo.equals("int")) {
+                        agregarTexto("li $v0, 5");
+                        agregarTexto("syscall");
+                        almacenarEnVariable(varName, "$v0");
+                    } else { // float
+                        agregarTexto("li $v0, 6");
+                        agregarTexto("syscall");
+                        almacenarEnVariable(varName, "$f0");
                     }
                 }
             }
@@ -621,8 +725,10 @@ public class mipsGenerator {
                         else liberarAuxiliarDespuesDeUso(regFuente);
                     } else if (tablaSimbolos.existeEnHistorial(destino)) {
                         Simbolo sd = tablaSimbolos.buscarEnHistorial(destino);
-                        if (sd.getTipo().equals("string")) { datos.append(".align 2\n"); agregarDato(destino + ": .asciiz \"" + fuente + "\""); }
-                        else { String regFuente = cargarOperando(fuente); almacenarEnVariable(destino, regFuente); }
+                        if (!sd.getTipo().equals("string")) {
+                            String regFuente = cargarOperando(fuente);
+                            almacenarEnVariable(destino, regFuente);
+                        }
                     } else if (destino.equals("return")) {
                         String regVal = cargarOperando(fuente);
                         if (regVal.startsWith("$f")) agregarTexto("mov.s $f0, " + regVal); else agregarTexto("move $v0, " + regVal);
@@ -645,6 +751,8 @@ public class mipsGenerator {
                     String reg1 = cargarOperando(operandos[0]), reg2 = cargarOperando(operandos[1]);
                     boolean floatOp = reg1.startsWith("$f") || reg2.startsWith("$f");
                     if (floatOp) {
+                        reg1 = convertirAFloat(reg1);
+                        reg2 = convertirAFloat(reg2);
                         if (operador.equals("n_equal")) { agregarTexto("c.eq.s " + reg1 + ", " + reg2); agregarTexto("bc1f " + etiqueta); }
                         else {
                             String condMips;
@@ -676,6 +784,12 @@ public class mipsGenerator {
                     String dest = partes[0], op1 = partes[2], oper = partes[3], op2 = partes[4];
                     String regOp1 = cargarOperando(op1), regOp2 = cargarOperando(op2);
                     boolean floatOp = regOp1.startsWith("$f") || regOp2.startsWith("$f");
+                    
+                    if (floatOp) {
+                        regOp1 = convertirAFloat(regOp1);
+                        regOp2 = convertirAFloat(regOp2);
+                    }
+                    
                     if (oper.equals("%")) {
                         if (floatOp) {
                             String regDest = asignarRegistroFloat(dest);
@@ -729,6 +843,8 @@ public class mipsGenerator {
                     String reg1 = cargarOperando(op1), reg2 = cargarOperando(op2);
                     boolean floatOp = reg1.startsWith("$f") || reg2.startsWith("$f");
                     if (floatOp) {
+                        reg1 = convertirAFloat(reg1);
+                        reg2 = convertirAFloat(reg2);
                         if (relop.equals("!=")) { agregarTexto("c.eq.s " + reg1 + ", " + reg2); agregarTexto("bc1f " + etiqueta); }
                         else {
                             String condMips;
@@ -790,12 +906,22 @@ public class mipsGenerator {
     private void imprimirString(String str) {
         if (tablaSimbolos.existeEnHistorial(str)) {
             Simbolo s = tablaSimbolos.buscarEnHistorial(str);
-            if (s.getTipo().equals("string")) { agregarTexto("la $a0, " + str); agregarTexto("li $v0, 4"); agregarTexto("syscall"); return; }
+            if (s.getTipo().equals("string")) {
+                agregarTexto("la $a0, " + str);
+                agregarTexto("li $v0, 4");
+                agregarTexto("syscall");
+                return;
+            }
         }
-        String etiqueta = "_str_lit_" + (contadorAux++);
-        datos.append(".align 2\n"); agregarDato(etiqueta + ": .asciiz \"" + str + "\"");
-        agregarTexto("la $a0, " + etiqueta); agregarTexto("li $v0, 4"); agregarTexto("syscall");
+        String etiqueta = "_str_lit_" + (contStringLit++);
+        datos.append(".align 2\n");
+        agregarDato(etiqueta + ": .asciiz \"" + str + "\"");
+        agregarTexto("la $a0, " + etiqueta);
+        agregarTexto("li $v0, 4");
+        agregarTexto("syscall");
     }
+
+
 
     private boolean esOperadorAritmetico(String token) {
         return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/")
@@ -808,6 +934,15 @@ public class mipsGenerator {
     }
 
     public String generarPrograma() {
+        for (Map.Entry<String, String> entry : stringVars.entrySet()) {
+            String nombre = entry.getKey();
+            String literal = entry.getValue();
+            if (datos.indexOf(nombre + ":") == -1) {
+                datos.append(".align 2\n");
+                agregarDato(nombre + ": .asciiz \"" + literal + "\"");
+            }
+        }
+
         StringBuilder resultado = new StringBuilder();
         resultado.append(".data\n").append(datos).append("\n.text\n");
         resultado.append(".globl main\n");
