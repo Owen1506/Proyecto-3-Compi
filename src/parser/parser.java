@@ -1040,10 +1040,16 @@ public class parser extends java_cup.runtime.lr_parser {
     /**
      * Acumula todos los errores sintácticos encontrados durante el análisis.
      * Es estática para permitir su consulta sin instanciar el parser.
+    *
+    * Entrada: mensajes producidos por report_error y syntax_error.
+    * Salida: listado completo de errores sintacticos para exportacion.
+    * Restriccion: se limpia al iniciar un nuevo analisis.
      */
     private static final List<String> SYNTAX_ERRORS = new ArrayList<>();
 
     // ── Estructuras para validaciones semánticas ──────────────────────────────
+    // Estas pilas sostienen el estado necesario para comprobar el uso correcto
+    // de breaks, returns, switches y otras construcciones con contexto.
 
     /** Pila de contextos de bucle/switch para validar sentencias break. */
     private static final Stack<String> flagParaBreaks = new Stack<>();
@@ -1057,6 +1063,8 @@ public class parser extends java_cup.runtime.lr_parser {
     private static Stack<String> exprAcc = new Stack<>();
     private static Stack<String>  exprTipo = new Stack<>();
     // ── Etiquetas para generación de código intermedio ────────────────────────
+    // Se usan para backpatching y para controlar saltos en if, while, do-while
+    // y switch sin perder el hilo del flujo generado.
 
     /** Etiquetas de inicio de bucles do-while anidados (para backpatching). */
     private static Stack<String> etiquetasDoWhile = new Stack<>();
@@ -1090,6 +1098,8 @@ public class parser extends java_cup.runtime.lr_parser {
     private static Stack<String> pilaIfFalse = new Stack<>();
     private static Stack<String> pilaIfEnd   = new Stack<>();
     // ── Generación de código intermedio y estado global ───────────────────────
+    // El generador 3D se alimenta directamente desde las acciones semánticas
+    // de las producciones y conserva el orden de ejecución del programa fuente.
 
     /** Generador de instrucciones de código de tres direcciones. */
     public static cod3D generador = new cod3D();
@@ -1120,6 +1130,7 @@ public class parser extends java_cup.runtime.lr_parser {
      *
      * Entrada: ninguna.
      * Salida: instancia de TablaManagement con todos los símbolos registrados.
+     * Restriccion: solo debe consultarse cuando el analisis haya concluido.
      */
     public TablaManagement getTabla() {
         return tabla;
@@ -1130,6 +1141,7 @@ public class parser extends java_cup.runtime.lr_parser {
      * Debe llamarse antes de iniciar un nuevo análisis para evitar acumulación entre ejecuciones.
      *
      * Entrada: ninguna. Salida: ninguna.
+     * Restriccion: borra el historial previo de errores para la nueva corrida.
      */
     public static void resetSyntaxErrors() {
         SYNTAX_ERRORS.clear();
@@ -1140,6 +1152,7 @@ public class parser extends java_cup.runtime.lr_parser {
      *
      * Entrada: ninguna.
      * Salida: List<String> con los errores registrados (no modificable externamente).
+     * Restriccion: la copia evita modificar el estado interno del parser.
      */
     public static List<String> getSyntaxErrors() {
         return new ArrayList<>(SYNTAX_ERRORS);

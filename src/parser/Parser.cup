@@ -1,11 +1,26 @@
 package parser;
 
-// Objetivo: Realizar el analisis semantico y generacion de codigo intermedio (3D)
-// contra la gramatica definida en el proyecto.
-// Entrada : tokens generados uno a uno por el analizador lexico.
-// Salida  : confirmacion de sintaxis valida o lista de errores con su ubicacion, analisis semantico y generacion de codigo intermedio (3D).
-// Restriccion: el parser no se detiene en el primer error.
-// usa producciones 'error' para recuperarse y continuar el analisis.
+/*
+ * Documento CUP del Proyecto 3.
+ *
+ * Objetivo:
+ * Definir la gramatica del lenguaje, realizar validaciones sintacticas y
+ * semanticas, y producir el codigo intermedio (3D) que luego consumira el
+ * generador MIPS.
+ *
+ * Entrada:
+ * - tokens producidos por el scanner JFlex.
+ * - valores asociados a identificadores y literales cuando la produccion lo requiera.
+ *
+ * Salida:
+ * - lista de errores lexicos, sintacticos y semanticos acumulados.
+ * - codigo intermedio de tres direcciones para las sentencias validas.
+ *
+ * Restricciones:
+ * - el analisis no debe abortar al primer error.
+ * - se utilizan producciones error para aplicar recuperacion en modo panico.
+ * - este archivo es la fuente de verdad de la gramatica; el parser Java se genera a partir de aqui.
+ */
 
 import scanner.*;
 import java_cup.runtime.*;
@@ -17,10 +32,16 @@ parser code {:
     /**
      * Acumula todos los errores sintácticos encontrados durante el análisis.
      * Es estática para permitir su consulta sin instanciar el parser.
+    *
+    * Entrada: mensajes producidos por report_error y syntax_error.
+    * Salida: listado completo de errores sintacticos para exportacion.
+    * Restriccion: se limpia al iniciar un nuevo analisis.
      */
     private static final List<String> SYNTAX_ERRORS = new ArrayList<>();
 
     // ── Estructuras para validaciones semánticas ──────────────────────────────
+    // Estas pilas sostienen el estado necesario para comprobar el uso correcto
+    // de breaks, returns, switches y otras construcciones con contexto.
 
     /** Pila de contextos de bucle/switch para validar sentencias break. */
     private static final Stack<String> flagParaBreaks = new Stack<>();
@@ -34,6 +55,8 @@ parser code {:
     private static Stack<String> exprAcc = new Stack<>();
     private static Stack<String>  exprTipo = new Stack<>();
     // ── Etiquetas para generación de código intermedio ────────────────────────
+    // Se usan para backpatching y para controlar saltos en if, while, do-while
+    // y switch sin perder el hilo del flujo generado.
 
     /** Etiquetas de inicio de bucles do-while anidados (para backpatching). */
     private static Stack<String> etiquetasDoWhile = new Stack<>();
@@ -67,6 +90,8 @@ parser code {:
     private static Stack<String> pilaIfFalse = new Stack<>();
     private static Stack<String> pilaIfEnd   = new Stack<>();
     // ── Generación de código intermedio y estado global ───────────────────────
+    // El generador 3D se alimenta directamente desde las acciones semánticas
+    // de las producciones y conserva el orden de ejecución del programa fuente.
 
     /** Generador de instrucciones de código de tres direcciones. */
     public static cod3D generador = new cod3D();
@@ -97,6 +122,7 @@ parser code {:
      *
      * Entrada: ninguna.
      * Salida: instancia de TablaManagement con todos los símbolos registrados.
+     * Restriccion: solo debe consultarse cuando el analisis haya concluido.
      */
     public TablaManagement getTabla() {
         return tabla;
@@ -107,6 +133,7 @@ parser code {:
      * Debe llamarse antes de iniciar un nuevo análisis para evitar acumulación entre ejecuciones.
      *
      * Entrada: ninguna. Salida: ninguna.
+     * Restriccion: borra el historial previo de errores para la nueva corrida.
      */
     public static void resetSyntaxErrors() {
         SYNTAX_ERRORS.clear();
@@ -117,6 +144,7 @@ parser code {:
      *
      * Entrada: ninguna.
      * Salida: List<String> con los errores registrados (no modificable externamente).
+     * Restriccion: la copia evita modificar el estado interno del parser.
      */
     public static List<String> getSyntaxErrors() {
         return new ArrayList<>(SYNTAX_ERRORS);
@@ -320,6 +348,7 @@ parser code {:
 
 // ===== TERMINALES =====
 // Son los tokens que el lexer puede producir y que el parser reconoce como hojas de la gramatica.
+// Cada terminal representa una clase de lexema aceptada por el lenguaje.
 
 terminal LEX_ERROR;
 
@@ -361,6 +390,7 @@ terminal CIN, COUT;
 
 // ===== NO TERMINALES =====
 // Representan las construcciones del lenguaje que se forman combinando terminales y otros no terminales.
+// Su tipo String se usa para propagar lexemas, tipos y metadatos semanticos entre producciones.
 
 non terminal  String tipo_retorno;        // tipo que retorna una funcion
 non terminal  String tipo;                // tipo de dato en general
@@ -392,7 +422,7 @@ non terminal  String if_rest;
 
 // ===== PRECEDENCIA Y ASOCIATIVIDAD =====
 // Define como resolver ambiguedades cuando dos operadores compiten por el mismo operando.
-// Los que aparecen mas abajo tienen mayor precedencia.
+// Los que aparecen mas abajo tienen mayor precedencia y la asociatividad sigue el orden declarado.
 precedence left OR;
 precedence left AND;
 precedence left EQUAL, N_EQUAL;
@@ -403,9 +433,12 @@ precedence right POW;
 precedence right NOT, INC, DEC;
 precedence right ELSE;
 // ===== PUNTO DE INICIO =====
+// La gramatica completa debe arrancar en programa para garantizar que exista un main.
 start with programa;
 
 // ===== PRODUCCIONES =====
+// Las producciones validan estructura, tipos y alcance; ademas emiten codigo 3D.
+// Las reglas con error permiten recuperar el analisis sin detener toda la compilacion.
 
 // Un programa puede tener funciones definidas antes del main, o solo el main.
 programa ::= funciones main_proc 
