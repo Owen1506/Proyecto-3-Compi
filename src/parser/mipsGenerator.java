@@ -7,19 +7,54 @@ import java.io.IOException;
 import tabla.Simbolo;
 import tabla.TablaManagement;
 
+/**
+ * Generador de codigo destino MIPS a partir del codigo intermedio (3D).
+ *
+ * Objetivo:
+ * Traducir las instrucciones de tres direcciones producidas por la fase
+ * anterior a un programa MIPS completo compatible con QtSpim.
+ *
+ * Entrada:
+ * - cod3D.txt generado por el analizador intermedio.
+ * - tabla de simbolos para resolver tipos, scopes y offsets.
+ *
+ * Salida:
+ * - segmento .data con literales y variables globales.
+ * - segmento .text con las instrucciones MIPS finales.
+ *
+ * Restricciones:
+ * - asume que el codigo 3D ya paso validacion semantica.
+ * - requiere que el archivo cod3D.txt exista en el directorio de ejecucion.
+ */
 public class mipsGenerator {
 
+    /**
+     * Modelo interno del stack frame de una funcion.
+     *
+     * Objetivo:
+     * Guardar offsets y tipos para ubicar variables locales y parametros.
+     */
     private static class FrameLayout {
         final boolean esMain;
         final Map<String, Integer> offsets = new LinkedHashMap<>();
         final Map<String, String> tipos = new HashMap<>();
         int nextOffset;
 
+        /**
+         * Crea un frame vacio para main o para una funcion normal.
+         * Entrada: esMain indica si el frame corresponde a main.
+         * Restriccion: en funciones normales se reserva el slot 0 para $ra.
+         */
         FrameLayout(boolean esMain) {
             this.esMain = esMain;
             this.nextOffset = esMain ? 0 : 4;   // slot 0 reservado para $ra
         }
 
+        /**
+         * Registra una variable local o parametro en el frame.
+         * Entrada: nombre, tamano en bytes y tipo.
+         * Restriccion: el offset interno avanza y no se reutiliza espacio.
+         */
         void agregarVariable(String nombre, int tamaño, String tipo) {
             if (tamaño > 1 && nextOffset % tamaño != 0) {
                 nextOffset += tamaño - (nextOffset % tamaño);
@@ -29,10 +64,20 @@ public class mipsGenerator {
             nextOffset += tamaño;
         }
 
+        /**
+         * Retorna el tamano total alineado del frame.
+         * Entrada: ninguna.
+         * Salida: numero de bytes a reservar en stack.
+         */
         int tamaño() {
             return (nextOffset + 3) & ~3;
         }
 
+        /**
+         * Obtiene el offset de una variable dentro del frame.
+         * Entrada: nombre de la variable.
+         * Salida: offset en bytes.
+         */
         int offset(String nombre) {
             Integer off = offsets.get(nombre);
             if (off == null)
@@ -40,10 +85,20 @@ public class mipsGenerator {
             return off;
         }
 
+        /**
+         * Indica si una variable existe en el frame.
+         * Entrada: nombre de la variable.
+         * Salida: true si esta registrada.
+         */
         boolean tiene(String nombre) {
             return offsets.containsKey(nombre);
         }
 
+        /**
+         * Retorna el tipo asociado a una variable del frame.
+         * Entrada: nombre de la variable.
+         * Salida: tipo semantico almacenado.
+         */
         String tipo(String nombre) {
             return tipos.get(nombre);
         }
@@ -82,6 +137,12 @@ public class mipsGenerator {
 
     private Map<String, String> stringVars = new LinkedHashMap<>();
 
+    /**
+     * Convierte un registro entero a flotante para operaciones mixtas.
+     * Entrada: registro fuente.
+     * Salida: registro flotante temporal.
+     * Restriccion: si el registro ya es flotante, se retorna sin cambios.
+     */
     private String convertirAFloat(String reg) {
         if (reg.startsWith("$f")) return reg;
 
@@ -93,12 +154,37 @@ public class mipsGenerator {
         return freg;
     }
 
+    /**
+     * Asigna la tabla de simbolos usada por la traduccion.
+     * Entrada: tabla de simbolos construida por el parser.
+     * Restriccion: debe configurarse antes de generar codigo MIPS.
+     */
     public void setTabla(TablaManagement t) { this.tablaSimbolos = t; }
+
+    /**
+     * Retorna la tabla de simbolos actualmente configurada.
+     * Entrada: ninguna.
+     * Salida: referencia a TablaManagement.
+     */
     public TablaManagement getTabla() { return tablaSimbolos; }
 
+    /**
+     * Agrega una linea al segmento de datos.
+     * Entrada: instruccion o declaracion para .data.
+     */
     public void agregarDato(String linea) { datos.append(linea).append("\n"); }
+
+    /**
+     * Agrega una linea al segmento de texto.
+     * Entrada: instruccion MIPS para .text.
+     */
     public void agregarTexto(String linea) { texto.append(linea).append("\n"); }
 
+    /**
+     * Lee el archivo de codigo 3D que alimenta la generacion MIPS.
+     * Entrada: ninguna.
+     * Salida: lista de lineas del archivo cod3D.txt.
+     */
     public List<String> leerCodigo3D() throws IOException {
         return Files.readAllLines(Paths.get("cod3D.txt"));
     }
@@ -107,6 +193,11 @@ public class mipsGenerator {
     private boolean esAuxiliar(String s) { return s.startsWith("_aux_"); }
     private boolean esAuxiliarFloat(String s) { return s.startsWith("_auxf_"); }
 
+    /**
+     * Calcula la ultima linea de uso de cada temporal.
+     * Entrada: lista de lineas del codigo 3D.
+     * Salida: actualiza mapas internos de ultimo uso.
+     */
     private void calcularUltimoUso(List<String> lineas) {
         ultimoUso.clear(); ultimoUsoFloat.clear();
         for (int i = 0; i < lineas.size(); i++) {
@@ -129,6 +220,12 @@ public class mipsGenerator {
         }
     }
 
+    /**
+     * Asigna un registro entero a un temporal o auxiliar.
+     * Entrada: nombre simbolico del temporal.
+     * Salida: nombre del registro MIPS seleccionado.
+     * Restriccion: falla si no quedan registros enteros libres.
+     */
     private String asignarRegistro(String temp) {
         if (tempARegistro.containsKey(temp)) return tempARegistro.get(temp);
         if (registrosLibres.isEmpty()) {
@@ -148,6 +245,12 @@ public class mipsGenerator {
         return reg;
     }
 
+    /**
+     * Asigna un registro flotante a un temporal o auxiliar.
+     * Entrada: nombre simbolico del temporal.
+     * Salida: nombre del registro flotante seleccionado.
+     * Restriccion: falla si no quedan registros flotantes libres.
+     */
     private String asignarRegistroFloat(String temp) {
         if (tempARegistroFloat.containsKey(temp)) return tempARegistroFloat.get(temp);
         if (registrosLibresFloat.isEmpty()) {
@@ -167,16 +270,28 @@ public class mipsGenerator {
         return reg;
     }
 
+    /**
+     * Libera un registro entero cuando el temporal ya no volvera a usarse.
+     * Entrada: nombre del temporal.
+     */
     private void liberarRegSiUltimoUso(String temp) {
         if (!esTemporal(temp)) return;
         if (ultimoUso.getOrDefault(temp,-1) == lineaActual && tempARegistro.containsKey(temp))
             registrosLibres.add(tempARegistro.remove(temp));
     }
+    /**
+     * Libera un registro flotante cuando el temporal ya no volvera a usarse.
+     * Entrada: nombre del temporal.
+     */
     private void liberarRegFloatSiUltimoUso(String temp) {
         if (!esTemporal(temp)) return;
         if (ultimoUsoFloat.getOrDefault(temp,-1) == lineaActual && tempARegistroFloat.containsKey(temp))
             registrosLibresFloat.add(tempARegistroFloat.remove(temp));
     }
+    /**
+     * Libera un registro auxiliar asociado a una expresion temporal o literal.
+     * Entrada: registro a liberar.
+     */
     private void liberarAuxiliarDespuesDeUso(String reg) {
         if (reg == null) return;
         if (reg.startsWith("$f")) {
@@ -191,6 +306,10 @@ public class mipsGenerator {
                 }
         }
     }
+    /**
+     * Libera auxiliares cuyo ultimo uso coincide con la linea actual.
+     * Entrada: ninguna.
+     */
     private void liberarAuxiliaresDeLineaActual() {
         Iterator<Map.Entry<String,String>> it = tempARegistro.entrySet().iterator();
         while (it.hasNext()) {
@@ -205,6 +324,10 @@ public class mipsGenerator {
                 { registrosLibresFloat.add(e.getValue()); itf.remove(); }
         }
     }
+    /**
+     * Devuelve un registro al pool de libres sin depender del ultimo uso.
+     * Entrada: registro a liberar.
+     */
     private void liberarRegistroForzado(String reg) {
         if (reg.startsWith("$f")) {
             for (Map.Entry<String,String> e : tempARegistroFloat.entrySet())
@@ -217,6 +340,11 @@ public class mipsGenerator {
         }
     }
 
+    /**
+     * Emite el cierre de una funcion y restaura el stack frame.
+     * Entrada: ninguna.
+     * Restriccion: solo actua si ya se realizo la reserva del frame.
+     */
     private void emitirEpilogo() {
         if (!stackAllocated || frameActual == null) return;
         int total = frameActual.tamaño();
@@ -229,6 +357,10 @@ public class mipsGenerator {
         agregarTexto("jr $ra");
     }
 
+    /**
+     * Hace una pasada previa sobre una funcion para estimar su frame.
+     * Entrada: lineas completas del 3D y posicion de inicio de la funcion.
+     */
     private void preScanFuncion(List<String> lineas, int inicio) {
         boolean esMain = nombreFuncionActual.equals("main");
         frameActual = new FrameLayout(esMain);
@@ -275,6 +407,10 @@ public class mipsGenerator {
         preScanHecho = true;
     }
 
+    /**
+     * Reserva el stack frame de la funcion actual cuando es necesario.
+     * Entrada: ninguna.
+     */
     private void asignarStackSiNecesario() {
         if (stackAllocated || frameActual == null) return;
         int total = frameActual.tamaño();
@@ -297,6 +433,11 @@ public class mipsGenerator {
         stackAllocated = true;
     }
 
+    /**
+     * Convierte un operando del 3D en un registro utilizable por MIPS.
+     * Entrada: operando simbolico, literal o temporal.
+     * Salida: registro con el valor cargado.
+     */
     private String cargarOperando(String op) {
         if (esTemporal(op)) {
             if (tempARegistroFloat.containsKey(op)) return tempARegistroFloat.get(op);
@@ -404,6 +545,10 @@ public class mipsGenerator {
         return reg;
     }
 
+    /**
+     * Almacena el contenido de un registro en una variable.
+     * Entrada: nombre del destino y registro fuente.
+     */
     private void almacenarEnVariable(String nombre, String regFuente) {
         if (frameActual != null && frameActual.tiene(nombre)) {
             String tipo = frameActual.tipo(nombre);
@@ -431,6 +576,10 @@ public class mipsGenerator {
         else agregarTexto("sw " + regFuente + ", 0(" + regDir + ")");
     }
 
+    /**
+     * Emite la llamada a una funcion manejando argumentos en registros o pila.
+     * Entrada: nombre de la funcion destino.
+     */
     private void emitirLlamada(String func) {
         int e = 0, f = 0, stackOff = 0;
         for (int i = 0; i < argsPendientes.size(); i++) {
@@ -463,6 +612,11 @@ public class mipsGenerator {
     private boolean esEnteroConstante(String token) {
         try { Integer.parseInt(token); return true; } catch (NumberFormatException e) { return false; }
     }
+    /**
+     * Calcula la direccion efectiva de una celda de arreglo bidimensional.
+     * Entrada: nombre del arreglo e indices de fila y columna.
+     * Salida: direccion final o referencia const-encoded para optimizacion.
+     */
     private String calcularDireccionArreglo(String nombreArray, String filaToken, String colToken) {
         Simbolo arrSim = tablaSimbolos.buscarEnHistorial(nombreArray);
         if (arrSim == null) throw new RuntimeException("Arreglo no encontrado: " + nombreArray);
@@ -492,6 +646,10 @@ public class mipsGenerator {
         liberarRegistroForzado(regBase); liberarRegistroForzado(regColumnas); liberarRegistroForzado(regCol);
         return regFila;
     }
+    /**
+     * Genera el almacenamiento de un valor dentro de un arreglo.
+     * Entrada: nombre del arreglo, indices y valor a escribir.
+     */
     private void ejecutarArrStore(String nombreArray, String fila, String col, String valor) {
         String dirInfo = calcularDireccionArreglo(nombreArray, fila, col);
         String regValor = cargarOperando(valor);
@@ -531,6 +689,10 @@ public class mipsGenerator {
             liberarRegFloatSiUltimoUso(valor);
         }
     }
+    /**
+     * Genera la carga de un valor desde un arreglo hacia un destino.
+     * Entrada: destino, nombre del arreglo e indices de acceso.
+     */
     private void ejecutarArrLoad(String destino, String nombreArray, String fila, String col) {
         String dirInfo = calcularDireccionArreglo(nombreArray, fila, col);
         Simbolo arrSim = tablaSimbolos.buscarEnHistorial(nombreArray);
@@ -561,6 +723,12 @@ public class mipsGenerator {
         }
     }
 
+    /**
+     * Genera el cuerpo MIPS recorriendo el codigo 3D linea por linea.
+     * Entrada: ninguna; consume el archivo cod3D.txt.
+     * Salida: codigo MIPS acumulado internamente.
+     * Restriccion: requiere tabla de simbolos configurada previamente.
+     */
     public String generarCodigo() throws IOException {
         List<String> lineas = leerCodigo3D();
         registrosLibres.addAll(Arrays.asList("$t0","$t1","$t2","$t3","$t4","$t5","$t6","$t7","$t8","$t9"));
@@ -893,6 +1061,11 @@ public class mipsGenerator {
         return generarPrograma();
     }
 
+    /**
+     * Verifica si una funcion contiene al menos un return.
+     * Entrada: lineas completas y posicion de inicio de la funcion.
+     * Salida: true si aparece una sentencia return.
+     */
     private boolean funcionContieneRetorno(List<String> lineas, int inicio) {
         for (int i = inicio+1; i < lineas.size(); i++) {
             String l = lineas.get(i).trim();
@@ -903,6 +1076,11 @@ public class mipsGenerator {
         return false;
     }
 
+    /**
+     * Emite una impresion por pantalla de una cadena.
+     * Entrada: nombre de string o literal sin comillas.
+     * Salida: instrucciones syscall para imprimir texto.
+     */
     private void imprimirString(String str) {
         if (tablaSimbolos.existeEnHistorial(str)) {
             Simbolo s = tablaSimbolos.buscarEnHistorial(str);
@@ -923,16 +1101,31 @@ public class mipsGenerator {
 
 
 
+    /**
+     * Indica si un token corresponde a un operador aritmetico soportado.
+     * Entrada: token de codigo 3D.
+     * Salida: true si el operador es valido.
+     */
     private boolean esOperadorAritmetico(String token) {
         return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/")
             || token.equals("%") || token.equals("^");
     }
 
+    /**
+     * Determina si un operando representa un caracter literal.
+     * Entrada: operando potencial.
+     * Salida: true si puede tratarse como char.
+     */
     private boolean esLiteralCaracter(String op) {
         return (op.startsWith("'") && op.endsWith("'") && op.length() == 3) ||
                (op.length() == 1 && !Character.isDigit(op.charAt(0)) && !op.equals("."));
     }
 
+    /**
+     * Combina los segmentos .data y .text en un programa MIPS completo.
+     * Entrada: ninguna.
+     * Salida: string final listo para exportarse.
+     */
     public String generarPrograma() {
         for (Map.Entry<String, String> entry : stringVars.entrySet()) {
             String nombre = entry.getKey();
